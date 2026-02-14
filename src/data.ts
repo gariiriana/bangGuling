@@ -1,7 +1,8 @@
 import { Product } from './types';
-import paruRumputLaut from './assets/paru_rumput_laut.png';
-import paruOriginal from './assets/paru_original.png';
-import nasiParu from './assets/nasi_paru.png';
+// Product images are now serving from public/assets for better compatibility with Firestore seeding
+const paruRumputLaut = '/assets/paru_rumput_laut.png';
+const paruOriginal = '/assets/paru_original.png';
+const nasiParu = '/assets/nasi_paru.png';
 
 export const products: Product[] = [
   {
