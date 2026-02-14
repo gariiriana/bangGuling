@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { seedProducts } from './scripts/seedProducts';
+import { seedProducts } from '../scripts/seedProducts';
 
 // Simple component to trigger seed
 export function AdminSeedData() {

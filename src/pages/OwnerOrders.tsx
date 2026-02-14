@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { useCart } from '../context/CartContext';
-import { Package, Search, Filter, CheckCircle2, Clock, Truck, XCircle, Eye, Phone, MapPin } from 'lucide-react';
+import { useOwnerOrders, updateOrderStatus as updateOrderInDb } from '../hooks/useOrders';
+import { Package, Search, CheckCircle2, Clock, Truck, XCircle, Eye, MapPin, Loader2 } from 'lucide-react';
 import { OwnerSidebar } from '../components/OwnerSidebar';
 import { OwnerHeader } from '../components/OwnerHeader';
 
 export function OwnerOrders() {
-  const { orders, updateOrderStatus } = useCart();
+  const { orders, loading } = useOwnerOrders();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -39,13 +40,15 @@ export function OwnerOrders() {
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         order.deliveryAddress.toLowerCase().includes(searchQuery.toLowerCase());
+      order.deliveryAddress.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    updateOrderStatus(orderId, newStatus);
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    setIsUpdating(orderId);
+    await updateOrderInDb(orderId, newStatus as any);
+    setIsUpdating(null);
   };
 
   const statusCounts = {
@@ -61,7 +64,7 @@ export function OwnerOrders() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <OwnerSidebar />
-      
+
       {/* Main Content */}
       <div className="flex-1 ml-64">
         {/* Header */}
@@ -98,11 +101,10 @@ export function OwnerOrders() {
                   <button
                     key={filter.key}
                     onClick={() => setStatusFilter(filter.key)}
-                    className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                      statusFilter === filter.key
-                        ? 'bg-golden-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${statusFilter === filter.key
+                      ? 'bg-golden-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
                   >
                     {filter.label} ({filter.count})
                   </button>
@@ -138,7 +140,12 @@ export function OwnerOrders() {
 
             {/* Orders List */}
             <div className="space-y-4">
-              {filteredOrders.length === 0 ? (
+              {loading ? (
+                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                  <Loader2 className="w-16 h-16 text-golden-600 animate-spin mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">Memuat pesanan...</p>
+                </div>
+              ) : filteredOrders.length === 0 ? (
                 <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                   <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-600 mb-2">
@@ -233,11 +240,10 @@ export function OwnerOrders() {
                                     key={status}
                                     onClick={() => handleStatusChange(order.id, status)}
                                     disabled={order.status === status}
-                                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                                      order.status === status
-                                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                        : 'bg-amber-600 text-white hover:bg-amber-700'
-                                    }`}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all ${order.status === status
+                                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                      : 'bg-amber-600 text-white hover:bg-amber-700'
+                                      }`}
                                   >
                                     {config.label}
                                   </button>

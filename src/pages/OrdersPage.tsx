@@ -1,11 +1,13 @@
 import { Header } from '../components/Header';
-import { useCart } from '../context/CartContext';
+import { useOrders } from '../hooks/useOrders';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Package, Truck, CheckCircle2 } from 'lucide-react';
+import { Clock, Package, Truck, CheckCircle2, Loader2 } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function OrdersPage() {
-  const { orders } = useCart();
+  const { user } = useAuth();
+  const { orders, loading } = useOrders(user?.uid);
   const navigate = useNavigate();
 
   const formatPrice = (price: number) => {
@@ -61,7 +63,12 @@ export function OrdersPage() {
       <Header title="Pesanan Saya" />
 
       <div className="max-w-screen-sm mx-auto p-4">
-        {orders.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 text-amber-600 animate-spin mb-4" />
+            <p className="text-gray-500">Memuat pesanan Anda...</p>
+          </div>
+        ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="text-6xl mb-4">📦</div>
             <h2 className="text-xl font-semibold mb-2">Belum Ada Pesanan</h2>
@@ -80,7 +87,7 @@ export function OrdersPage() {
             {orders.map((order) => {
               const statusInfo = getStatusInfo(order.status);
               const StatusIcon = statusInfo.icon;
-              
+
               return (
                 <div
                   key={order.id}

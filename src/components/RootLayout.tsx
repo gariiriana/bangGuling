@@ -23,6 +23,15 @@ export function RootLayout() {
 
   // Determine which bottom nav to show based on role and current page
   const showBottomNav = () => {
+    // Hide bottom nav on product detail pages and address forms to allow actions to be visible
+    if (
+      location.pathname.startsWith('/product/') ||
+      location.pathname.startsWith('/address/') ||
+      location.pathname.startsWith('/checkout') ||
+      location.pathname.startsWith('/order/')
+    ) {
+      return null;
+    }
     // Don't show bottom nav for owner role (desktop layout with sidebar)
     if (user?.role === 'owner') {
       return null;
@@ -32,7 +41,6 @@ export function RootLayout() {
     // Show customer bottom nav for guest and customer
     return <BottomNav />;
   };
-
   return (
     <>
       <Outlet />

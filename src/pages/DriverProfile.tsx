@@ -2,25 +2,30 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Star, Package, TrendingUp, Edit2, Camera, LogOut } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import { useDriverOrders } from '../hooks/useOrders';
+import { useNotification } from '../context/NotificationContext';
 import { LogoutModal } from '../components/LogoutModal';
 
 export function DriverProfile() {
   const { user, logout } = useAuth();
+  const { showNotification } = useNotification();
   const navigate = useNavigate();
-  const { orders } = useCart();
+  const { orders: driverOrders } = useDriverOrders(user?.uid);
   const [isEditing, setIsEditing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setShowLogoutModal(false);
-    navigate('/');
+    navigate('/login');
   };
 
-  const completedOrders = orders.filter((o) => o.status === 'delivered');
+  // Calculate stats from confirmed deliveries
+  const completedOrders = driverOrders.filter((o) => o.status === 'delivered');
   const rating = 4.9;
   const totalDeliveries = completedOrders.length;
+  // Calculate On-Time percentage (dummy logic for now, or based on deliveredAt vs expectation)
+  const onTimePercentage = totalDeliveries > 0 ? '98%' : '-';
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -38,7 +43,7 @@ export function DriverProfile() {
           <div className="flex flex-col items-center -mt-16 mb-4">
             <div className="relative">
               <div className="w-24 h-24 bg-gradient-to-br from-golden-500 to-golden-600 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-xl border-4 border-white">
-                {user?.name?.charAt(0).toUpperCase()}
+                {user?.displayName?.charAt(0).toUpperCase()}
               </div>
               <button className="absolute bottom-0 right-0 w-8 h-8 bg-golden-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-golden-700">
                 <Camera className="w-4 h-4" />
@@ -48,7 +53,7 @@ export function DriverProfile() {
 
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-1">
-              {user?.name}
+              {user?.displayName}
             </h2>
             <div className="flex items-center justify-center gap-1 text-golden-600">
               <Star className="w-5 h-5 fill-current" />
@@ -68,7 +73,7 @@ export function DriverProfile() {
             </div>
             <div className="text-center p-3 bg-green-50 rounded-xl">
               <TrendingUp className="w-6 h-6 text-green-600 mx-auto mb-1" />
-              <div className="text-2xl font-bold text-gray-900">98%</div>
+              <div className="text-2xl font-bold text-gray-900">{onTimePercentage}</div>
               <div className="text-xs text-gray-600">On-Time</div>
             </div>
             <div className="text-center p-3 bg-purple-50 rounded-xl">
@@ -108,11 +113,11 @@ export function DriverProfile() {
                 {isEditing ? (
                   <input
                     type="text"
-                    defaultValue={user?.name}
+                    defaultValue={user?.displayName}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-600"
                   />
                 ) : (
-                  <div className="font-medium text-gray-900">{user?.name}</div>
+                  <div className="font-medium text-gray-900">{user?.displayName}</div>
                 )}
               </div>
             </div>
@@ -235,6 +240,43 @@ export function DriverProfile() {
               <div className="text-xs font-medium">5 Star Rating</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Testing Area */}
+      <div className="max-w-screen-sm mx-auto px-4 mb-4">
+        <div className="bg-white rounded-2xl shadow-sm p-6 border-2 border-dashed border-blue-200">
+          <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+            🛠️ Area Pengujian
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Klik tombol ini untuk membuat 10 pesanan dummy yang otomatis masuk ke akun:
+            <br />
+            - Customer: <b>customer@gmail.com</b>
+            <br />
+            - Driver: <b>driver@gmail.com</b>
+          </p>
+          <button
+            onClick={async () => {
+              try {
+                const { seedDummyOrders } = await import('../scripts/seedProducts');
+                // Generate 10 orders for specfic email accounts
+                const res = await seedDummyOrders(10, 'customer@gmail.com', 'driver@gmail.com');
+                if (res.success) {
+                  showNotification('Berhasil membuat 10 data dummy spesifik! Dashboard akan update otomatis.', 'success');
+                } else {
+                  showNotification('Gagal membuat data dummy.', 'error');
+                }
+              } catch (e) {
+                console.error(e);
+                showNotification('Terjadi kesalahan saat memproses data dummy.', 'error');
+              }
+            }}
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-md flex items-center justify-center gap-2"
+          >
+            <Package className="w-5 h-5" />
+            Generate Data Dummy (+10)
+          </button>
         </div>
       </div>
 

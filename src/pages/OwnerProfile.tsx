@@ -11,7 +11,7 @@ export function OwnerProfile() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <OwnerSidebar />
-      
+
       {/* Main Content */}
       <div className="flex-1 ml-64">
         {/* Header */}
@@ -26,7 +26,7 @@ export function OwnerProfile() {
             <div className="flex items-center gap-8">
               <div className="relative -mt-20">
                 <div className="w-32 h-32 bg-gradient-to-br from-golden-500 to-golden-600 rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-xl border-4 border-white">
-                  {user?.name?.charAt(0).toUpperCase()}
+                  {user?.displayName?.charAt(0).toUpperCase()}
                 </div>
                 <button className="absolute bottom-2 right-2 w-10 h-10 bg-golden-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-golden-700">
                   <Camera className="w-5 h-5" />
@@ -35,10 +35,10 @@ export function OwnerProfile() {
 
               <div className="flex-1">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  {user?.name}
+                  {user?.displayName}
                 </h2>
                 <p className="text-gray-600 mb-4">Pemilik Bisnis</p>
-                
+
                 <button
                   onClick={() => setIsEditing(!isEditing)}
                   className="bg-golden-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-golden-700 transition-all inline-flex items-center gap-2"
@@ -81,11 +81,11 @@ export function OwnerProfile() {
                     {isEditing ? (
                       <input
                         type="text"
-                        defaultValue={user?.name}
+                        defaultValue={user?.displayName}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden-600"
                       />
                     ) : (
-                      <div className="font-medium text-gray-900 text-lg">{user?.name}</div>
+                      <div className="font-medium text-gray-900 text-lg">{user?.displayName}</div>
                     )}
                   </div>
                 </div>

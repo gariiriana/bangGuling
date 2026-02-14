@@ -109,7 +109,7 @@ export function useDriverOrders(driverId: string | undefined) {
 
         const q = query(
             collection(db, 'orders'),
-            where('status', 'in', ['processing', 'on-delivery']),
+            where('status', 'in', ['pending', 'processing', 'on-delivery', 'delivered']),
             orderBy('placedAt', 'desc')
         );
 

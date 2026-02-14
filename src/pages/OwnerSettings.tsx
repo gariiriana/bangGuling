@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import { Settings, Bell, Lock, Globe, DollarSign, Truck, Store, Save, LogOut } from 'lucide-react';
+import { Settings, Bell, Globe, Truck, Store, Save, LogOut, Database } from 'lucide-react';
 import { OwnerSidebar } from '../components/OwnerSidebar';
 import { OwnerHeader } from '../components/OwnerHeader';
 import { LogoutModal } from '../components/LogoutModal';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../context/NotificationContext';
 
 export function OwnerSettings() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  
+  const { showNotification } = useNotification();
+
   const [settings, setSettings] = useState({
     storeName: 'Bang Guling',
     storePhone: '081234567890',
@@ -33,19 +35,19 @@ export function OwnerSettings() {
   });
 
   const handleSave = () => {
-    alert('Pengaturan berhasil disimpan!');
+    showNotification('Pengaturan berhasil disimpan!', 'success');
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setShowLogoutModal(false);
-    navigate('/');
+    navigate('/login');
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <OwnerSidebar />
-      
+
       {/* Main Content */}
       <div className="flex-1 ml-64">
         {/* Header */}
@@ -272,8 +274,63 @@ export function OwnerSettings() {
               </div>
             </div>
 
-            {/* Save Button */}
-            <div className="flex justify-end gap-3 pb-8">
+            {/* Data Management */}
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <Database className="w-6 h-6 text-golden-600" />
+                Manajemen Data
+              </h2>
+              <div className="space-y-6">
+                <div className="p-4 border border-golden-100 bg-golden-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-golden-900 font-medium">Perbarui Katalog Produk</div>
+                      <div className="text-sm text-golden-700">Sinkronkan produk Paru Nyam Nyam terbaru ke database</div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const { seedProducts } = await import('../scripts/seedProducts');
+                        const res = await seedProducts();
+                        if (res.success) {
+                          showNotification('Katalog produk berhasil diperbarui!', 'success');
+                        } else {
+                          showNotification('Gagal memperbarui katalog.', 'error');
+                        }
+                      }}
+                      className="px-4 py-2 bg-golden-600 text-white rounded-lg text-sm font-medium hover:bg-golden-700 transition-all"
+                    >
+                      Sinkronkan Sekarang
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 border border-blue-100 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-blue-900 font-medium">Pembangkit Pesanan Dummy</div>
+                      <div className="text-sm text-blue-700">Tambahkan 50 pesanan acak setiap klik (Berasal dari Paru Nyam Nyam)</div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const { seedDummyOrders } = await import('../scripts/seedProducts');
+                        const res = await seedDummyOrders(50);
+                        if (res.success) {
+                          showNotification('50 pesanan dummy berhasil ditambahkan!', 'success');
+                        } else {
+                          showNotification('Gagal menambah pesanan dummy.', 'error');
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-all"
+                    >
+                      Tambah +50 Pesanan
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4">
               <button
                 onClick={() => setShowLogoutModal(true)}
                 className="px-8 py-3 bg-white border-2 border-red-500 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-all flex items-center gap-2"
@@ -290,14 +347,14 @@ export function OwnerSettings() {
               </button>
             </div>
           </div>
+
+          <LogoutModal
+            isOpen={showLogoutModal}
+            onClose={() => setShowLogoutModal(false)}
+            onConfirm={handleLogout}
+          />
         </div>
       </div>
-
-      <LogoutModal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={handleLogout}
-      />
     </div>
   );
 }

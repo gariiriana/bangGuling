@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { ProductPage } from './pages/ProductPage';
 import { CartPage } from './pages/CartPage';
@@ -16,11 +16,15 @@ import { OwnerOrders } from './pages/OwnerOrders';
 import { OwnerReports } from './pages/OwnerReports';
 import { OwnerSettings } from './pages/OwnerSettings';
 import { OwnerProfile } from './pages/OwnerProfile';
+import { OwnerActiveDrivers } from './pages/OwnerActiveDrivers';
 import { RootLayout } from './components/RootLayout';
 import { AddressPage } from './pages/AddressPage';
+import { AddressFormPage } from './pages/AddressFormPage';
 import { PartnershipPage } from './pages/PartnershipPage';
 import { PartnershipApplyPage } from './pages/PartnershipApplyPage';
 import { PartnershipStatusPage } from './pages/PartnershipStatusPage';
+import { EditProfilePage } from './pages/EditProfilePage';
+import { FeatureComingSoonPage } from './pages/FeatureComingSoonPage';
 
 export const router = createBrowserRouter([
   {
@@ -76,8 +80,36 @@ export const router = createBrowserRouter([
         Component: ProfilePage,
       },
       {
+        path: 'profile/edit',
+        Component: EditProfilePage,
+      },
+      {
+        path: 'profile/payment',
+        Component: FeatureComingSoonPage,
+      },
+      {
+        path: 'profile/notifications',
+        Component: FeatureComingSoonPage,
+      },
+      {
+        path: 'profile/help',
+        Component: FeatureComingSoonPage,
+      },
+      {
+        path: 'profile/privacy',
+        Component: FeatureComingSoonPage,
+      },
+      {
         path: 'address',
         Component: AddressPage,
+      },
+      {
+        path: 'address/new',
+        Component: AddressFormPage,
+      },
+      {
+        path: 'address/edit/:id',
+        Component: AddressFormPage,
       },
       {
         path: 'driver',
@@ -110,6 +142,10 @@ export const router = createBrowserRouter([
       {
         path: 'owner/profile',
         Component: OwnerProfile,
+      },
+      {
+        path: 'owner/monitoring',
+        Component: OwnerActiveDrivers,
       },
     ],
   },

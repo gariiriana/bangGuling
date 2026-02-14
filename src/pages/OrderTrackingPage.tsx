@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Clock, CheckCircle2, Package, Truck } from 'lucide-react';
-import { useOrder } from '../hooks/useOrders';
+import { useOrder, updateOrderStatus } from '../hooks/useOrders';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function OrderTrackingPage() {
@@ -136,7 +136,7 @@ export function OrderTrackingPage() {
               <div className={`font-semibold ${statusInfo.color}`}>
                 {statusInfo.text}
               </div>
-              <div className="text-sm text-gray-600">Order #{order.id.substring(0, 12)}...</div>
+              <div className="text-sm text-gray-600">Order #{order.id.substring(0, 8)}...</div>
             </div>
           </div>
           {order.status === 'pending' && (
@@ -251,6 +251,21 @@ export function OrderTrackingPage() {
 
         {/* Actions */}
         <div className="px-4 space-y-2">
+          {order.status === 'pending' && (
+            <button
+              onClick={async () => {
+                const confirm = window.confirm('Apakah Anda yakin ingin mengonfirmasi pembayaran ini?');
+                if (confirm) {
+                  await updateOrderStatus(order.id, 'processing');
+                  // We can also add a toast/notification here if needed, but the UI will update automatically
+                }
+              }}
+              className="w-full bg-gradient-to-r from-golden-600 to-golden-700 text-white py-3 rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
+            >
+              Konfirmasi Pembayaran & Proses Pesanan
+            </button>
+          )}
+
           {order.status === 'delivered' && (
             <button
               onClick={() => navigate('/')}

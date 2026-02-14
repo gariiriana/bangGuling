@@ -7,19 +7,10 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-
-type UserRole = 'customer' | 'driver' | 'owner';
-
-interface User {
-  uid: string;
-  email: string;
-  displayName: string;
-  role: UserRole;
-  photoURL?: string;
-  phone?: string;
-}
+import { useNotification } from './NotificationContext';
+import { User, UserRole } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -33,6 +24,8 @@ interface AuthContextType {
   isOwner: () => boolean;
   isDriver: () => boolean;
   isCustomer: () => boolean;
+  intendedPath: string | null;
+  setIntendedPath: (path: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,49 +34,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [intendedPath, setIntendedPath] = useState<string | null>(null);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // User is signed in, fetch additional data from Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email!,
-            displayName: firebaseUser.displayName || userData.displayName || '',
-            role: userData.role as UserRole,
-            photoURL: firebaseUser.photoURL || userData.photoURL,
-            phone: userData.phone,
-          });
-        } else {
-          // If user doc doesn't exist, create a default customer profile
-          const defaultUser: User = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email!,
-            displayName: firebaseUser.displayName || '',
-            role: 'customer',
-          };
-          await setDoc(doc(db, 'users', firebaseUser.uid), {
-            ...defaultUser,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-          setUser(defaultUser);
-        }
         setFirebaseUser(firebaseUser);
+
+        // Listen for user data changes in real-time
+        const userRef = doc(db, 'users', firebaseUser.uid);
+
+        // We use onSnapshot instead of getDoc to handle real-time updates
+        // This is crucial for role changes (e.g. customer -> driver)
+        onSnapshot(userRef, (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const userData = docSnapshot.data();
+            console.log('DEBUG: User updated:', userData);
+
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email!,
+              displayName: userData.displayName || firebaseUser.displayName || '',
+              role: userData.role as UserRole,
+              photoURL: userData.photoURL || firebaseUser.photoURL,
+              phone: userData.phone,
+              address: userData.address,
+            });
+          } else {
+            console.log('DEBUG: User doc missing, creating default');
+            // Create default user if missing
+            const defaultUser: User = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email!,
+              displayName: firebaseUser.displayName || '',
+              role: 'customer',
+            };
+
+            // Create the document (this will trigger snapshot again with exists=true)
+            // ensure validation or security rules allow this
+            setDoc(userRef, {
+              ...defaultUser,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+            setUser(defaultUser);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error('Snapshot error:', error);
+          setLoading(false);
+        });
+
       } else {
         // User is signed out
         setUser(null);
         setFirebaseUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   const register = async (
@@ -119,31 +131,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (error: any) {
       console.error('Registration error:', error);
-      alert(error.message || 'Registration failed');
+      showNotification(error.message || 'Registration failed', 'error');
       return false;
     }
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // User data will be set by onAuthStateChanged listener
+      await signInWithEmailAndPassword(auth, email, password);
+      // User data will be set by onAuthStateChanged listener logic
       return true;
     } catch (error: any) {
       console.error('Login error:', error);
 
       // User-friendly error messages
+      let message = 'Login gagal';
       if (error.code === 'auth/user-not-found') {
-        alert('Akun tidak ditemukan. Silakan daftar terlebih dahulu.');
+        message = 'Akun tidak ditemukan. Silakan daftar terlebih dahulu.';
       } else if (error.code === 'auth/wrong-password') {
-        alert('Password salah. Silakan coba lagi.');
+        message = 'Password salah. Silakan coba lagi.';
       } else if (error.code === 'auth/invalid-email') {
-        alert('Format email tidak valid.');
+        message = 'Format email tidak valid.';
       } else if (error.code === 'auth/invalid-credential') {
-        alert('Email atau password salah.');
+        message = 'Email atau password salah.';
       } else {
-        alert(error.message || 'Login gagal');
+        message = error.message || 'Login gagal';
       }
+      showNotification(message, 'error');
       return false;
     }
   };
@@ -188,6 +202,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isOwner,
         isDriver,
         isCustomer,
+        intendedPath,
+        setIntendedPath,
       }}
     >
       {!loading && children}

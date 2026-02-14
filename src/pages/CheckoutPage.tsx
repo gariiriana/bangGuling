@@ -1,22 +1,22 @@
-import { ArrowLeft, MapPin, CreditCard, Wallet, Banknote, ChevronRight, Tag, Clock } from 'lucide-react';
+import { ArrowLeft, MapPin, CreditCard, Wallet, ChevronRight, Clock, QrCode } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAddress } from '../context/AddressContext';
 import { useAuth } from '../context/AuthContext';
 import { createOrder } from '../hooks/useOrders';
 import { useState } from 'react';
+import { useNotification } from '../context/NotificationContext';
 
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, getTotal, clearCart } = useCart();
   const { selectedAddress } = useAddress();
-  const { user } = useAuth();
+  const { user, setIntendedPath } = useAuth();
   const [selectedPayment, setSelectedPayment] = useState('gopay');
   const [notes, setNotes] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('2026-02-13');
-  const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
-  const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { showNotification } = useNotification();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -31,41 +31,24 @@ export function CheckoutPage() {
     { id: 'ovo', name: 'OVO', icon: Wallet, color: 'text-purple-600', bgColor: 'bg-purple-50' },
     { id: 'dana', name: 'DANA', icon: Wallet, color: 'text-blue-500', bgColor: 'bg-blue-50' },
     { id: 'card', name: 'Kartu Kredit/Debit', icon: CreditCard, color: 'text-gray-600', bgColor: 'bg-gray-50' },
-    { id: 'cod', name: 'Bayar di Tempat', icon: Banknote, color: 'text-golden-600', bgColor: 'bg-golden-50' },
+    { id: 'qris', name: 'QRIS', icon: QrCode, color: 'text-golden-600', bgColor: 'bg-golden-50' },
   ];
-
-  const vouchers = [
-    { id: 'GULING15', name: 'Diskon 15%', discount: 0.15, description: 'Diskon 15% untuk semua menu' },
-    { id: 'NEWUSER', name: 'Gratis Ongkir', discount: 5000, description: 'Gratis biaya layanan untuk pengguna baru' },
-    { id: 'HEMAT10', name: 'Hemat Rp 10.000', discount: 10000, description: 'Potongan Rp 10.000 min. belanja Rp 50.000' },
-  ];
-
-  const getDiscountAmount = () => {
-    if (!appliedVoucher) return 0;
-    const voucher = vouchers.find((v) => v.id === appliedVoucher);
-    if (!voucher) return 0;
-
-    if (typeof voucher.discount === 'number' && voucher.discount < 1) {
-      return getTotal() * voucher.discount;
-    }
-    return voucher.discount;
-  };
 
   const getFinalTotal = () => {
     const subtotal = getTotal();
     const serviceFee = 5000;
-    const discount = getDiscountAmount();
-    return subtotal + serviceFee - discount;
+    return subtotal + serviceFee;
   };
 
   const handleCheckout = async () => {
     if (!selectedAddress) {
-      alert('Silakan pilih alamat pengiriman terlebih dahulu');
+      showNotification('Silakan pilih alamat pengiriman terlebih dahulu', 'error');
       return;
     }
 
     if (!user) {
-      alert('Silakan login terlebih dahulu');
+      showNotification('Silakan login terlebih dahulu', 'info');
+      setIntendedPath('/checkout');
       navigate('/login');
       return;
     }
@@ -89,7 +72,7 @@ export function CheckoutPage() {
       clearCart();
       navigate(`/order/${result.orderId}`);
     } else {
-      alert('Gagal membuat pesanan. Silakan coba lagi.');
+      showNotification('Gagal membuat pesanan. Silakan coba lagi.', 'error');
     }
   };
 
@@ -181,34 +164,6 @@ export function CheckoutPage() {
           </div>
         </div>
 
-        {/* Voucher/Promo */}
-        <button
-          onClick={() => setShowVoucherModal(true)}
-          className="bg-white p-4 mb-2 w-full text-left"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-golden-100 rounded-full flex items-center justify-center">
-              <Tag className="w-5 h-5 text-golden-600" />
-            </div>
-            <div className="flex-1">
-              {appliedVoucher ? (
-                <>
-                  <div className="text-sm font-semibold text-golden-600">
-                    {appliedVoucher}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Hemat {formatPrice(getDiscountAmount())}
-                  </div>
-                </>
-              ) : (
-                <div className="text-sm font-medium text-gray-900">
-                  Gunakan Voucher / Promo
-                </div>
-              )}
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </div>
-        </button>
 
         {/* Notes */}
         <div className="bg-white p-4 mb-2">
@@ -273,12 +228,6 @@ export function CheckoutPage() {
               <span className="text-gray-600">Biaya Layanan</span>
               <span>{formatPrice(5000)}</span>
             </div>
-            {appliedVoucher && (
-              <div className="flex justify-between text-green-600">
-                <span>Diskon Voucher</span>
-                <span>- {formatPrice(getDiscountAmount())}</span>
-              </div>
-            )}
             <div className="border-t pt-2 flex justify-between font-semibold text-base">
               <span>Total Pembayaran</span>
               <span className="text-golden-600">{formatPrice(getFinalTotal())}</span>
@@ -303,71 +252,6 @@ export function CheckoutPage() {
         </div>
       </div>
 
-      {/* Voucher Modal */}
-      {showVoucherModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
-          <div className="bg-white rounded-t-3xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-4 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Pilih Voucher</h3>
-              <button
-                onClick={() => setShowVoucherModal(false)}
-                className="text-gray-500 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              {vouchers.map((voucher) => (
-                <button
-                  key={voucher.id}
-                  onClick={() => {
-                    setAppliedVoucher(voucher.id);
-                    setShowVoucherModal(false);
-                  }}
-                  className={`w-full border-2 rounded-xl p-4 text-left transition-all ${appliedVoucher === voucher.id
-                    ? 'border-golden-500 bg-golden-50'
-                    : 'border-gray-200 hover:border-golden-300'
-                    }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 bg-golden-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Tag className="w-6 h-6 text-golden-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-gray-900 mb-1">
-                        {voucher.name}
-                      </div>
-                      <div className="text-sm text-gray-600 mb-2">
-                        {voucher.description}
-                      </div>
-                      <div className="inline-block px-2 py-1 bg-golden-100 text-golden-700 text-xs font-medium rounded">
-                        {voucher.id}
-                      </div>
-                    </div>
-                    {appliedVoucher === voucher.id && (
-                      <div className="w-6 h-6 bg-golden-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <div className="text-white text-xs">✓</div>
-                      </div>
-                    )}
-                  </div>
-                </button>
-              ))}
-
-              {appliedVoucher && (
-                <button
-                  onClick={() => {
-                    setAppliedVoucher(null);
-                    setShowVoucherModal(false);
-                  }}
-                  className="w-full border-2 border-red-200 rounded-xl p-4 text-red-600 font-medium hover:bg-red-50"
-                >
-                  Hapus Voucher
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

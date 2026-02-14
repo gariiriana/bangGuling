@@ -3,22 +3,24 @@ import { useProducts } from '../hooks/useProducts';
 import { Star, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import logo from 'figma:asset/877ad0558b27a27f7de66e697939ba2ccf913439.png';
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { LoginRequiredModal } from '../components/LoginRequiredModal';
 
 export function HomePage() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const { products, loading, error } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const categories = [
     { id: 'all', name: 'Semua', icon: '🍽️', gradient: 'from-golden-500 to-golden-700' },
     { id: 'Makanan Utama', name: 'Makanan Utama', icon: '🍛', gradient: 'from-orange-500 to-red-600' },
     { id: 'Snack', name: 'Snack', icon: '🔥', gradient: 'from-red-500 to-pink-600' },
-    { id: 'promo', name: 'Promo', icon: '🎉', gradient: 'from-purple-500 to-pink-500' },
-    { id: 'favorite', name: 'Favorit', icon: '⭐', gradient: 'from-yellow-400 to-orange-500' },
   ];
 
   const formatPrice = (price: number) => {
@@ -31,10 +33,25 @@ export function HomePage() {
 
   const getFilteredProducts = () => {
     if (!products) return [];
-    if (selectedCategory === 'all') return products;
-    if (selectedCategory === 'favorite') return products.filter(p => p.rating >= 4.9);
-    if (selectedCategory === 'promo') return products; // Show all for promo
-    return products.filter(p => p.category === selectedCategory);
+
+    let filtered = products;
+
+    // Search filter first (Global)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query) ||
+        p.category.toLowerCase().includes(query)
+      );
+    }
+
+    // Then apply category filter if not "all"
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(p => p.category === selectedCategory);
+    }
+
+    return filtered;
   };
 
   const filteredProducts = getFilteredProducts();
@@ -92,23 +109,8 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <Header showSearch showLocation />
+      <Header showSearch showLocation onSearch={setSearchQuery} />
 
-      {/* Promo Banner */}
-      <div className="max-w-screen-sm mx-auto px-4 py-4">
-        <div className="bg-gradient-to-r from-golden-600 via-black-700 to-black-900 rounded-2xl p-4 text-white flex items-center gap-4 shadow-lg">
-          <img src={logo} alt="Bang Guling" className="w-20 h-20 object-contain flex-shrink-0" />
-          <div className="flex-1">
-            <div className="text-sm opacity-90">Promo Spesial</div>
-            <div className="text-lg font-semibold mt-1">
-              Diskon 15% untuk pemesanan hari ini!
-            </div>
-            <div className="text-sm mt-1 bg-white bg-opacity-20 inline-block px-2 py-1 rounded">
-              Gunakan kode: GULING15
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Categories - Enhanced */}
       <div className="max-w-screen-sm mx-auto px-4 py-3">
@@ -122,16 +124,16 @@ export function HomePage() {
             >
               <div
                 className={`w-16 h-16 bg-gradient-to-br ${cat.gradient} rounded-2xl flex items-center justify-center text-2xl shadow-md transition-all ${selectedCategory === cat.id
-                    ? 'ring-4 ring-golden-300 shadow-lg'
-                    : 'opacity-70'
+                  ? 'ring-4 ring-golden-300 shadow-lg'
+                  : 'opacity-70'
                   }`}
               >
                 {cat.icon}
               </div>
               <span
                 className={`text-xs font-medium transition-colors ${selectedCategory === cat.id
-                    ? 'text-golden-700'
-                    : 'text-gray-600'
+                  ? 'text-golden-700'
+                  : 'text-gray-600'
                   }`}
               >
                 {cat.name}
@@ -149,7 +151,7 @@ export function HomePage() {
         </div>
 
         <div className="grid gap-3">
-          {products.slice(0, 3).map((product) => (
+          {filteredProducts.slice(0, 3).map((product) => (
             <div
               key={product.id}
               onClick={() => navigate(`/product/${product.id}`)}
@@ -179,7 +181,11 @@ export function HomePage() {
                     className="bg-gradient-to-r from-golden-600 to-black-700 text-white p-1.5 rounded-lg hover:from-golden-700 hover:to-black-800 transition-all"
                     onClick={(e) => {
                       e.stopPropagation();
-                      addToCart(product);
+                      if (!user) {
+                        setShowLoginModal(true);
+                        return;
+                      }
+                      addToCart({ ...product, quantity: 1 });
                     }}
                   >
                     <Plus className="w-4 h-4" />
@@ -222,6 +228,11 @@ export function HomePage() {
           ))}
         </div>
       </div>
+      {/* Modal Login Required */}
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </div>
   );
 }

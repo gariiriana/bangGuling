@@ -5,9 +5,10 @@ import {
   DollarSign,
   Package,
   Users,
-  MapPin,
   Calendar,
   Activity,
+  Trash2,
+  Database,
 } from 'lucide-react';
 import {
   LineChart,
@@ -25,9 +26,11 @@ import {
 } from 'recharts';
 import { OwnerSidebar } from '../components/OwnerSidebar';
 import { OwnerHeader } from '../components/OwnerHeader';
+import { useDataManagement } from '../hooks/useDataManagement';
 
 export function OwnerDashboard() {
   const { orders } = useOwnerOrders();
+  const { clearAllData, generateDummyData, loading: dataLoading } = useDataManagement();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -216,7 +219,7 @@ export function OwnerDashboard() {
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {orderStatusData.map((entry, index) => (
+                      {orderStatusData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={STATUS_COLORS[index]} />
                       ))}
                     </Pie>
@@ -253,33 +256,35 @@ export function OwnerDashboard() {
               </ResponsiveContainer>
             </div>
 
-            {/* Location Heatmap */}
-            <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Heatmap Lokasi Pengiriman</h2>
-                <MapPin className="w-5 h-5 text-golden-600" />
-              </div>
-              <div className="space-y-3">
-                {locationData.map((location, index) => {
-                  const maxOrders = Math.max(...locationData.map((l) => l.orders));
-                  const percentage = (location.orders / maxOrders) * 100;
-                  return (
-                    <div key={location.area}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700">{location.area}</span>
-                        <span className="text-sm text-gray-600">{location.orders} pesanan</span>
-                      </div>
-                      <div className="relative w-full h-10 bg-gray-100 rounded-lg overflow-hidden">
-                        <div
-                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-golden-500 to-golden-600 rounded-lg flex items-center justify-end px-4"
-                          style={{ width: `${percentage}%` }}
-                        >
-                          <span className="text-sm font-semibold text-white">{formatPrice(location.revenue)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+            {/* Data Management Tools */}
+            <div className="bg-white rounded-xl shadow-md p-6 mb-8 border border-golden-100">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Alat Pengelola Data</h2>
+                  <p className="text-sm text-gray-500 mt-1">Gunakan alat ini untuk mengelola data dummy dan membersihkan database.</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Apakah Anda yakin ingin menghapus semua data pesanan, aplikasi, dan produk? Tindakan ini tidak dapat dibatalkan.')) {
+                        clearAllData();
+                      }
+                    }}
+                    disabled={dataLoading}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    {dataLoading ? 'Memproses...' : 'Hapus Semua Data'}
+                  </button>
+                  <button
+                    onClick={() => generateDummyData()}
+                    disabled={dataLoading}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-golden-50 text-golden-700 rounded-xl font-medium hover:bg-golden-100 transition-colors disabled:opacity-50 border border-golden-200"
+                  >
+                    <Database className="w-5 h-5" />
+                    {dataLoading ? 'Memproses...' : 'Buat Data Dummy'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

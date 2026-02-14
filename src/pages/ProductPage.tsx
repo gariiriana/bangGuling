@@ -3,15 +3,19 @@ import { ArrowLeft, Star, Minus, Plus } from 'lucide-react';
 import { useProduct } from '../hooks/useProducts';
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { LoginRequiredModal } from '../components/LoginRequiredModal';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function ProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const { product, loading, error } = useProduct(id);
   const [quantity, setQuantity] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -22,7 +26,15 @@ export function ProductPage() {
   };
 
   const handleAddToCart = () => {
+    console.log('Current User State:', user); // Debugging
     if (!product) return;
+
+    if (!user) {
+      console.log('User is missing, showing modal'); // Debugging
+      setShowLoginModal(true);
+      return;
+    }
+
     addToCart({ ...product, quantity });
     setShowSuccess(true);
     setTimeout(() => {
@@ -175,6 +187,12 @@ export function ProductPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal Login Required */}
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useNotification } from '../context/NotificationContext';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
@@ -11,6 +12,7 @@ export function PartnershipApplyPage() {
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [applicationId, setApplicationId] = useState('');
+    const { showNotification } = useNotification();
 
     // Form data
     const [formData, setFormData] = useState({
@@ -131,7 +133,7 @@ export function PartnershipApplyPage() {
             setSubmitted(true);
         } catch (error) {
             console.error('Error submitting application:', error);
-            alert('Gagal mengirim aplikasi. Silakan coba lagi.');
+            showNotification('Gagal mengirim aplikasi. Silakan coba lagi.', 'error');
         } finally {
             setLoading(false);
         }
@@ -375,8 +377,8 @@ export function PartnershipApplyPage() {
                                         type="button"
                                         onClick={() => handleInputChange('vehicleType', 'motor')}
                                         className={`p-4 border-2 rounded-lg font-medium transition-colors ${formData.vehicleType === 'motor'
-                                                ? 'border-golden-600 bg-golden-50 text-golden-700'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-golden-600 bg-golden-50 text-golden-700'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         🏍️ Motor
@@ -385,8 +387,8 @@ export function PartnershipApplyPage() {
                                         type="button"
                                         onClick={() => handleInputChange('vehicleType', 'mobil')}
                                         className={`p-4 border-2 rounded-lg font-medium transition-colors ${formData.vehicleType === 'mobil'
-                                                ? 'border-golden-600 bg-golden-50 text-golden-700'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-golden-600 bg-golden-50 text-golden-700'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         🚗 Mobil

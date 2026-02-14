@@ -4,14 +4,18 @@ import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { AddressProvider } from './context/AddressContext';
 
+import { NotificationProvider } from './context/NotificationContext';
+
 export default function App() {
   return (
-    <AuthProvider>
-      <AddressProvider>
-        <CartProvider>
-          <RouterProvider router={router} />
-        </CartProvider>
-      </AddressProvider>
-    </AuthProvider>
+    <NotificationProvider>
+      <AuthProvider>
+        <AddressProvider>
+          <CartProvider>
+            <RouterProvider router={router} />
+          </CartProvider>
+        </AddressProvider>
+      </AuthProvider>
+    </NotificationProvider>
   );
 }

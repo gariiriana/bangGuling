@@ -7,9 +7,10 @@ interface HeaderProps {
   title?: string;
   showSearch?: boolean;
   showLocation?: boolean;
+  onSearch?: (query: string) => void;
 }
 
-export function Header({ title, showSearch, showLocation }: HeaderProps) {
+export function Header({ title, showSearch, showLocation, onSearch }: HeaderProps) {
   const navigate = useNavigate();
   const { selectedAddress } = useAddress();
 
@@ -19,7 +20,7 @@ export function Header({ title, showSearch, showLocation }: HeaderProps) {
         {/* Top Bar */}
         <div className="flex items-center justify-between mb-3">
           {showLocation ? (
-            <button 
+            <button
               onClick={() => navigate('/address')}
               className="flex items-center gap-2 flex-1 mr-4"
             >
@@ -49,6 +50,7 @@ export function Header({ title, showSearch, showLocation }: HeaderProps) {
             <input
               type="text"
               placeholder="Cari menu kambing guling..."
+              onChange={(e) => onSearch?.(e.target.value)}
               className="flex-1 bg-transparent outline-none placeholder:text-gray-400"
             />
           </div>

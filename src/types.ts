@@ -23,7 +23,7 @@ export interface Order {
   id: string;
   customerId: string;
   driverId?: string;
-  status: 'pending' | 'processing' | 'on-delivery' | 'delivered' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'processing' | 'on-delivery' | 'delivered' | 'cancelled';
   items: CartItem[];
   total: number;
   deliveryAddress: string;
@@ -38,6 +38,7 @@ export interface Order {
   // Legacy field for backward compatibility
   date?: string;
 }
+export type UserRole = 'customer' | 'driver' | 'owner';
 
 export interface User {
   uid: string;
@@ -46,11 +47,17 @@ export interface User {
   role: 'customer' | 'driver' | 'owner';
   phone?: string;
   photoURL?: string;
+  address?: string;
   // Driver specific
   vehicleType?: string;
   vehiclePlate?: string;
   isActive?: boolean;
   earnings?: number;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  lastActive?: Timestamp;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

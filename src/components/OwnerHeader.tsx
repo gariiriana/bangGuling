@@ -10,10 +10,10 @@ export function OwnerHeader({ title, subtitle }: { title: string; subtitle?: str
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setShowLogoutModal(false);
-    navigate('/');
+    navigate('/login');
   };
 
   const handleProfileClick = () => {
@@ -37,7 +37,7 @@ export function OwnerHeader({ title, subtitle }: { title: string; subtitle?: str
               className="flex items-center gap-3 bg-black-800/50 hover:bg-black-800 transition-all px-4 py-3 rounded-xl border border-golden-600/30"
             >
               <div className="w-10 h-10 bg-gradient-to-br from-golden-500 to-golden-600 rounded-full flex items-center justify-center text-white font-bold">
-                {user?.name?.charAt(0).toUpperCase()}
+
               </div>
               <div className="text-left">
                 <div className="font-semibold text-sm">{user?.name}</div>
@@ -49,7 +49,7 @@ export function OwnerHeader({ title, subtitle }: { title: string; subtitle?: str
             {/* Dropdown Menu */}
             {showDropdown && (
               <>
-                <div 
+                <div
                   className="fixed inset-0 z-10"
                   onClick={() => setShowDropdown(false)}
                 />

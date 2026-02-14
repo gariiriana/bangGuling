@@ -1,13 +1,36 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useDriverOrders, updateOrderStatus } from '../hooks/useOrders';
-import { Package, MapPin, CheckCircle2, Navigation, DollarSign } from 'lucide-react';
+import { useLocationTracker } from '../hooks/useLocationTracker';
+import { Package, MapPin, CheckCircle2, Navigation, DollarSign, Activity, Power } from 'lucide-react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export function DriverDashboard() {
   const { user } = useAuth();
   const { orders, loading } = useDriverOrders(user?.uid);
+  console.log('DEBUG: Driver Orders:', orders);
+  console.log('DEBUG: User UID:', user?.uid);
   const [selectedTab, setSelectedTab] = useState<'available' | 'ongoing' | 'completed'>('available');
   const [processing, setProcessing] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(user?.isActive || false);
+
+  // Initialize location tracking
+  const { error: locationError } = useLocationTracker(user?.uid, isOnline);
+
+  const toggleOnlineStatus = async () => {
+    if (!user) return;
+    const newStatus = !isOnline;
+    setIsOnline(newStatus);
+
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        isActive: newStatus
+      });
+    } catch (error) {
+      console.error('Error updating online status:', error);
+    }
+  };
 
   // Filter orders for driver
   const availableOrders = orders.filter((o) => o.status === 'processing');
@@ -70,9 +93,30 @@ export function DriverDashboard() {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-golden-600 via-black-700 to-black-800 text-white">
-        <div className="max-w-screen-sm mx-auto px-4 pt-6 pb-4">
-          <h1 className="text-2xl font-bold mb-2">Dashboard Driver</h1>
-          <p className="text-golden-200 text-sm">Kelola pengiriman Anda</p>
+        <div className="max-w-screen-sm mx-auto px-4 pt-6 pb-6">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-2xl font-bold">Dashboard Driver</h1>
+              <p className="text-golden-200 text-sm">Kelola pengiriman Anda</p>
+            </div>
+            <button
+              onClick={toggleOnlineStatus}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all shadow-lg ${isOnline
+                ? 'bg-green-500 text-white animate-pulse'
+                : 'bg-gray-600 text-gray-300'
+                }`}
+            >
+              <Power className="w-4 h-4" />
+              {isOnline ? 'ONLINE' : 'OFFLINE'}
+            </button>
+          </div>
+
+          {locationError && (
+            <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-lg p-2 flex items-center gap-2 text-xs">
+              <Activity className="w-4 h-4 text-red-500" />
+              <span>Gagal mendapatkan lokasi: {locationError}</span>
+            </div>
+          )}
         </div>
       </div>
 
