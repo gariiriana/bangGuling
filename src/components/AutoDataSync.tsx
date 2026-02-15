@@ -33,10 +33,18 @@ export function AutoDataSync() {
                 console.log('[AutoDataSync] No products found. Seeding initial data...');
                 needsSync = true;
             } else {
+                const { products } = await import('../data');
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // Check for legacy /src/assets paths or missing images
+                    const localProduct = products.find(p => p.id === doc.id);
+
+                    // Check for legacy /src/assets paths
                     if (data.image && typeof data.image === 'string' && data.image.includes('/src/assets/')) {
+                        needsSync = true;
+                    }
+
+                    // NEW: Check if name or description has changed in data.ts
+                    if (localProduct && (data.name !== localProduct.name || data.description !== localProduct.description)) {
                         needsSync = true;
                     }
                 });
