@@ -29,8 +29,8 @@ export const products: Product[] = [
   },
   {
     id: '3',
-    name: 'Nasi Paru Premium (Lengkap)',
-    description: 'Porsi lengkap nasi putih hangat dengan taburan Paru Nyam Nyam krispi yang melimpah. Disertai sambal korek pedas, serundeng gurih, dan irisan mentimun segar. Menu makan siang paling mantap!',
+    name: 'Nasi Kambing Guling Special',
+    description: 'Porsi lengkap nasi putih hangat dengan taburan Kambing Guling spesial yang melimpah. Disertai sambal korek pedas, serundeng gurih, dan irisan mentimun segar. Menu makan siang paling mantap!',
     price: 20000,
     image: nasiParu,
     category: 'Makanan Utama',
