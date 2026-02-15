@@ -130,10 +130,4 @@ export async function seedDummyOrders(count: number = 20, customerEmail: string 
     }
 }
 
-// Run seed if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-    seedProducts().then(() => {
-        console.log('Seed complete!');
-        process.exit(0);
-    });
-}
+
