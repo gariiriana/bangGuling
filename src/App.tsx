@@ -6,10 +6,13 @@ import { AddressProvider } from './context/AddressContext';
 
 import { NotificationProvider } from './context/NotificationContext';
 
+import { AutoDataSync } from './components/AutoDataSync';
+
 export default function App() {
   return (
     <NotificationProvider>
       <AuthProvider>
+        <AutoDataSync />
         <AddressProvider>
           <CartProvider>
             <RouterProvider router={router} />
