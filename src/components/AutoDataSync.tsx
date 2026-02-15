@@ -33,7 +33,9 @@ export function AutoDataSync() {
                 console.log('[AutoDataSync] No products found. Seeding initial data...');
                 needsSync = true;
             } else {
-                const { products } = await import('../data');
+                const dataObj = await import('../data');
+                const products = dataObj.products;
+
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const localProduct = products.find(p => p.id === doc.id);
@@ -43,24 +45,29 @@ export function AutoDataSync() {
                         needsSync = true;
                     }
 
-                    // NEW: Check if name or description has changed in data.ts
-                    if (localProduct && (data.name !== localProduct.name || data.description !== localProduct.description)) {
+                    // NEW: Check if name, description, OR image has changed in data.ts
+                    if (localProduct && (
+                        data.name !== localProduct.name ||
+                        data.description !== localProduct.description ||
+                        data.image !== localProduct.image
+                    )) {
                         needsSync = true;
                     }
                 });
-            }
 
-            if (needsSync) {
-                console.log('[AutoDataSync] Legacy data detected. Updating Firestore with stable asset paths...');
-                const result = await seedProducts();
-                if (result.success) {
-                    console.log('[AutoDataSync] Successfully synchronized product catalog.');
+                if (needsSync) {
+                    console.log('[AutoDataSync] Consistency issue detected. Forcing Firestore update...');
+                    console.log('[AutoDataSync] Local Products to sync:', products.map(p => ({ id: p.id, name: p.name, image: p.image })));
+                    const result = await seedProducts();
+                    if (result.success) {
+                        console.log('[AutoDataSync] Successfully updated Firestore with local data.');
+                    }
+                } else {
+                    console.log('[AutoDataSync] Database matches local data. No sync needed.');
                 }
-            } else {
-                console.log('[AutoDataSync] Database is healthy.');
             }
         } catch (error) {
-            console.error('[AutoDataSync] Verification failed:', error);
+            console.error('[AutoDataSync] Verification process failed:', error);
         }
     };
 

@@ -18,9 +18,9 @@ export function HomePage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const categories = [
-    { id: 'all', name: 'Semua', icon: '🍽️', gradient: 'from-golden-500 to-golden-700' },
-    { id: 'Makanan Utama', name: 'Makanan Utama', icon: '🍛', gradient: 'from-orange-500 to-red-600' },
-    { id: 'Snack', name: 'Snack', icon: '🔥', gradient: 'from-red-500 to-pink-600' },
+    { id: 'all', name: 'Semua', icon: '🍽️' },
+    { id: 'Makanan Utama', name: 'Makanan Utama', icon: '🍛' },
+    { id: 'Snack', name: 'Snack', icon: '🔥' },
   ];
 
   const formatPrice = (price: number) => {
@@ -112,30 +112,23 @@ export function HomePage() {
       <Header showSearch showLocation onSearch={setSearchQuery} />
 
 
-      {/* Categories - Enhanced */}
-      <div className="max-w-screen-sm mx-auto px-4 py-3">
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      {/* Categories - Compact & Efficient */}
+      <div className="max-w-screen-sm mx-auto px-4 py-4">
+        <div className="flex justify-center flex-wrap gap-2">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`flex flex-col items-center gap-2 min-w-[90px] transition-all ${selectedCategory === cat.id ? 'scale-105' : 'scale-100'
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${selectedCategory === cat.id
+                  ? 'bg-golden-600 border-golden-600 text-white shadow-md'
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-golden-300 hover:bg-golden-50 shadow-sm'
                 }`}
             >
-              <div
-                className={`w-16 h-16 bg-gradient-to-br ${cat.gradient} rounded-2xl flex items-center justify-center text-2xl shadow-md transition-all ${selectedCategory === cat.id
-                  ? 'ring-4 ring-golden-300 shadow-lg'
-                  : 'opacity-70'
-                  }`}
-              >
+              <span className={`text-base ${selectedCategory === cat.id ? 'filter-none' : 'grayscale opacity-70'}`}>
                 {cat.icon}
-              </div>
-              <span
-                className={`text-xs font-medium transition-colors ${selectedCategory === cat.id
-                  ? 'text-golden-700'
-                  : 'text-gray-600'
-                  }`}
-              >
+              </span>
+              <span className={`text-xs font-bold whitespace-nowrap ${selectedCategory === cat.id ? 'text-white' : 'text-gray-700'
+                }`}>
                 {cat.name}
               </span>
             </button>
