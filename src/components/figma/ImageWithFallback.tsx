@@ -12,6 +12,17 @@ export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElemen
 
   const { src, alt, style, className, ...rest } = props
 
+  // Universal fix for legacy local paths in Firestore
+  const getCleanSrc = (url: string | undefined) => {
+    if (!url) return url;
+    if (url.includes('/src/assets/')) {
+      return url.replace('/src/assets/', '/img/');
+    }
+    return url;
+  };
+
+  const cleanSrc = getCleanSrc(src);
+
   return didError ? (
     <div
       className={`inline-block bg-gray-100 text-center align-middle ${className ?? ''}`}
@@ -22,6 +33,6 @@ export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElemen
       </div>
     </div>
   ) : (
-    <img src={src} alt={alt} className={className} style={style} {...rest} onError={handleError} />
+    <img src={cleanSrc} alt={alt} className={className} style={style} {...rest} onError={handleError} />
   )
 }
