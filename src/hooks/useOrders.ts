@@ -96,20 +96,32 @@ export function useOrder(orderId: string | undefined) {
 }
 
 // Get orders for driver (status: processing or on-delivery)
-export function useDriverOrders(driverId: string | undefined) {
+export function useDriverOrders(driverId: string | undefined, isOnline: boolean) {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        if (!driverId) {
+        if (!driverId || !isOnline) {
+            setOrders([]);
             setLoading(false);
             return;
         }
 
         const q = query(
             collection(db, 'orders'),
-            where('status', 'in', ['pending', 'processing', 'on-delivery', 'delivered']),
+            where('status', 'in', [
+                'pending',
+                'paid',
+                'processing',
+                'pesanan_dibuat',
+                'driver_tiba_di_restoran',
+                'pesanan_diambil_driver',
+                'otw_menuju_lokasi',
+                'on-delivery',
+                'delivered',
+                'pesanan_selesai'
+            ]),
             orderBy('placedAt', 'desc')
         );
 
@@ -131,7 +143,7 @@ export function useDriverOrders(driverId: string | undefined) {
         );
 
         return () => unsubscribe();
-    }, [driverId]);
+    }, [driverId, isOnline]);
 
     return { orders, loading, error };
 }
@@ -202,13 +214,31 @@ export async function createOrder(
 export async function updateOrderStatus(
     orderId: string,
     status: Order['status'],
-    driverId?: string
+    driverId?: string,
+    photoData?: string // B64 encoded photo
 ) {
     try {
         const docRef = doc(db, 'orders', orderId);
         const updateData: any = { status };
 
-        if (status === 'processing' && driverId) {
+        if (status === 'paid') {
+            updateData.paidAt = Timestamp.now();
+        } else if (status === 'pesanan_dibuat' && driverId) {
+            updateData.driverId = driverId;
+            updateData.confirmedAt = Timestamp.now();
+        } else if (status === 'driver_tiba_di_restoran') {
+            updateData.arrivedAtRestoAt = Timestamp.now();
+        } else if (status === 'pesanan_diambil_driver') {
+            updateData.pickedUpAt = Timestamp.now();
+        } else if (status === 'otw_menuju_lokasi') {
+            updateData.onTheWayAt = Timestamp.now();
+        } else if (status === 'pesanan_selesai') {
+            updateData.completedAt = Timestamp.now();
+            updateData.deliveredAt = Timestamp.now();
+            if (photoData) {
+                updateData.completionPhoto = photoData;
+            }
+        } else if (status === 'processing' && driverId) {
             updateData.driverId = driverId;
             updateData.confirmedAt = Timestamp.now();
         } else if (status === 'on-delivery') {

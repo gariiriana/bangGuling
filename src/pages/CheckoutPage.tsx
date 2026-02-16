@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, CreditCard, Wallet, ChevronRight, Clock, QrCode } from 'lucide-react';
+import { ArrowLeft, MapPin, ChevronRight, Clock, QrCode } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAddress } from '../context/AddressContext';
@@ -12,7 +12,7 @@ export function CheckoutPage() {
   const { cart, getTotal, clearCart } = useCart();
   const { selectedAddress } = useAddress();
   const { user, setIntendedPath } = useAuth();
-  const [selectedPayment, setSelectedPayment] = useState('gopay');
+  const [selectedPayment, setSelectedPayment] = useState('qris');
   const [notes, setNotes] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('2026-02-13');
   const [loading, setLoading] = useState(false);
@@ -27,10 +27,6 @@ export function CheckoutPage() {
   };
 
   const paymentMethods = [
-    { id: 'gopay', name: 'GoPay', icon: Wallet, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { id: 'ovo', name: 'OVO', icon: Wallet, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-    { id: 'dana', name: 'DANA', icon: Wallet, color: 'text-blue-500', bgColor: 'bg-blue-50' },
-    { id: 'card', name: 'Kartu Kredit/Debit', icon: CreditCard, color: 'text-gray-600', bgColor: 'bg-gray-50' },
     { id: 'qris', name: 'QRIS', icon: QrCode, color: 'text-golden-600', bgColor: 'bg-golden-50' },
   ];
 
@@ -70,7 +66,7 @@ export function CheckoutPage() {
 
     if (result.success) {
       clearCart();
-      navigate(`/order/${result.orderId}`);
+      navigate(`/qris/${result.orderId}`);
     } else {
       showNotification('Gagal membuat pesanan. Silakan coba lagi.', 'error');
     }

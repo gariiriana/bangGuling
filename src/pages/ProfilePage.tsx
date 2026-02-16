@@ -1,14 +1,17 @@
 import { Header } from '../components/Header';
-import { User, MapPin, Phone, Mail, ChevronRight, LogOut, CreditCard, Bell, HelpCircle, Shield } from 'lucide-react';
+import { User, MapPin, Phone, ChevronRight, LogOut, CreditCard, Bell, HelpCircle, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { LogoutModal } from '../components/LogoutModal';
 import { useState } from 'react';
 
+import { useOrders } from '../hooks/useOrders';
+
 export function ProfilePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { orders } = useOrders(user?.uid);
 
   const handleLogout = async () => {
     await logout();
@@ -25,6 +28,12 @@ export function ProfilePage() {
     window.location.href = '/driver';
     return null;
   }
+
+  // Calculate Stats
+  const totalOrders = orders.length;
+  const completedOrders = orders.filter(o => ['pesanan_selesai', 'delivered'].includes(o.status)).length;
+  const processingOrders = orders.filter(o => ['paid', 'confirmed', 'processing', 'pesanan_dibuat', 'driver_tiba_di_restoran', 'pesanan_diambil_driver', 'otw_menuju_lokasi'].includes(o.status)).length;
+  // Note: 'pending' and 'cancelled' are excluded from 'Sedang Proses' and 'Selesai' specific counts but count towards Total.
 
   const menuItems = [
     { icon: User, label: 'Edit Profil', path: '/profile/edit' },
@@ -76,15 +85,15 @@ export function ProfilePage() {
         <div className="bg-white p-4 mb-2">
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-semibold text-amber-600">12</div>
+              <div className="text-2xl font-semibold text-amber-600">{totalOrders}</div>
               <div className="text-xs text-gray-600 mt-1">Total Pesanan</div>
             </div>
             <div className="text-center border-l border-r">
-              <div className="text-2xl font-semibold text-amber-600">3</div>
+              <div className="text-2xl font-semibold text-amber-600">{processingOrders}</div>
               <div className="text-xs text-gray-600 mt-1">Sedang Proses</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-amber-600">9</div>
+              <div className="text-2xl font-semibold text-amber-600">{completedOrders}</div>
               <div className="text-xs text-gray-600 mt-1">Selesai</div>
             </div>
           </div>

@@ -28,7 +28,8 @@ export function RootLayout() {
       location.pathname.startsWith('/product/') ||
       location.pathname.startsWith('/address/') ||
       location.pathname.startsWith('/checkout') ||
-      location.pathname.startsWith('/order/')
+      location.pathname.startsWith('/order/') ||
+      location.pathname.startsWith('/qris')
     ) {
       return null;
     }

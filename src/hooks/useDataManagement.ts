@@ -3,7 +3,7 @@ import { db } from '../lib/firebase';
 import { useNotification } from '../context/NotificationContext';
 import { products } from '../data';
 import { useState } from 'react';
-import { Order, DriverApplication, Product } from '../types';
+import { Order, DriverApplication } from '../types';
 
 export function useDataManagement() {
     const [loading, setLoading] = useState(false);

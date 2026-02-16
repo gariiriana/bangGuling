@@ -27,8 +27,10 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       // Users can read and write their own profile
-      allow read: if isSignedIn() && request.auth.uid == userId;
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      
+      // Customers can read driver profiles (for name, plate, and real-time location tracking)
+      allow read: if isSignedIn() && (isCustomer() || isDriver());
       
       // Owner can read all users
       allow read: if isOwner();
@@ -49,10 +51,10 @@ service cloud.firestore {
       allow read: if isSignedIn() && 
                      request.auth.uid == resource.data.customerId;
       
-      // Driver can read orders assigned to them or available orders
+      // Driver can read orders assigned to them or available orders (paid/processing)
       allow read: if isSignedIn() && (
                      request.auth.uid == resource.data.get('driverId', null) ||
-                     resource.data.status == 'processing'
+                     resource.data.status in ['paid', 'processing']
                    );
       
       // Owner can read all orders
@@ -62,16 +64,24 @@ service cloud.firestore {
       allow create: if isSignedIn() && 
                        request.auth.uid == request.resource.data.customerId;
       
-      // Driver can update order status (accept, on-delivery, delivered)
-      allow update: if isDriver() && (
-                       // Driver accepting the order
-                       (resource.data.status == 'processing' && 
-                        request.resource.data.status == 'on-delivery' &&
-                        request.resource.data.driverId == request.auth.uid) ||
-                       // Driver completing the order
-                       (resource.data.status == 'on-delivery' && 
-                        request.resource.data.status == 'delivered' &&
-                        resource.data.driverId == request.auth.uid)
+      // Driver or Customer can update order status
+      allow update: if (
+                       // Customer updating to paid status
+                       (isCustomer() && 
+                        resource.data.customerId == request.auth.uid &&
+                        resource.data.status == 'pending' &&
+                        request.resource.data.status == 'paid') ||
+                       
+                       // Driver update flow
+                       (isDriver() && (
+                         // Driver accepting the order (Paid -> pesanan_dibuat)
+                         ((resource.data.status == 'paid' || resource.data.status == 'processing') && 
+                          request.resource.data.status == 'pesanan_dibuat' &&
+                          request.resource.data.driverId == request.auth.uid) ||
+                         // Driver intermediate steps
+                         (['pesanan_dibuat', 'driver_tiba_di_restoran', 'pesanan_diambil_driver', 'otw_menuju_lokasi', 'on-delivery'].includes(resource.data.status) && 
+                          resource.data.driverId == request.auth.uid)
+                       ))
                      );
       
       // Owner can update any order

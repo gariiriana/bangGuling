@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, User, Phone, Mail, MapPin } from 'lucide-react';
+import { ArrowLeft, Save, User, Phone, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -101,8 +101,8 @@ export function EditProfilePage() {
 
             // Force reload to refresh context state and navigate back
             setTimeout(() => {
-                window.location.href = '/profile';
-            }, 1000);
+                navigate('/profile');
+            }, 500);
         } catch (error: any) {
             console.error('Error updating profile:', error);
             showNotification('Gagal memperbarui profil: ' + error.message, 'error');
@@ -111,7 +111,7 @@ export function EditProfilePage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="min-h-screen bg-gray-50 pb-40">
             <div className="bg-white border-b sticky top-0 z-10">
                 <div className="max-w-screen-sm mx-auto px-4 py-4 flex items-center gap-3">
                     <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -122,12 +122,12 @@ export function EditProfilePage() {
             </div>
 
             <div className="max-w-screen-sm mx-auto p-4">
-                <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-sm space-y-8">
+                <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border border-gray-100">
 
                     {/* Profile Picture Section */}
-                    <div className="flex flex-col items-center justify-center">
+                    <div className="flex flex-col items-center justify-center mb-8">
                         <div className="relative group">
-                            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-50 shadow-inner bg-gray-100">
+                            <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-50 ring-1 ring-gray-100">
                                 {imagePreview ? (
                                     <img
                                         src={imagePreview}
@@ -136,16 +136,16 @@ export function EditProfilePage() {
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
-                                        <User className="w-20 h-20" />
+                                        <User className="w-12 h-12" />
                                     </div>
                                 )}
                             </div>
 
                             {/* Pencil Button */}
-                            <label className="absolute bottom-0 right-0 bg-amber-600 text-white p-3 rounded-full shadow-lg cursor-pointer hover:bg-amber-700 transition-all active:scale-90 border-4 border-white">
+                            <label className="absolute bottom-0 right-0 bg-white text-golden-600 p-2 rounded-full shadow-md cursor-pointer hover:bg-gray-50 transition-all active:scale-95 border border-gray-100">
                                 <span className="sr-only">Ubah Foto</span>
                                 <div className="w-5 h-5 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                     </svg>
                                 </div>
@@ -158,25 +158,25 @@ export function EditProfilePage() {
                                 />
                             </label>
                         </div>
-                        <p className="text-xs text-gray-400 mt-3">Format: JPG, PNG (Maks. 2MB)</p>
+                        <p className="text-xs text-gray-400 mt-3 font-medium tracking-wide">Format: AVG, PNG (Maks. 2MB)</p>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                         {/* Nama Lengkap */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-gray-700 ml-1">
                                 Nama Lengkap
                             </label>
-                            <div className="relative">
-                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+                            <div className="relative group">
+                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-golden-600 transition-colors pointer-events-none">
                                     <User className="w-5 h-5" />
                                 </div>
                                 <input
                                     type="text"
                                     value={formData.displayName}
                                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                                    className="w-full pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
-                                    style={{ paddingLeft: '3.25rem' }}
+                                    className="block w-full pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-golden-500 focus:ring-4 focus:ring-golden-500/10 transition-all placeholder:text-gray-400 font-medium text-gray-900 shadow-sm"
+                                    style={{ paddingLeft: '60px' }}
                                     placeholder="Masukkan nama lengkap"
                                     required
                                 />
@@ -184,73 +184,54 @@ export function EditProfilePage() {
                         </div>
 
                         {/* No. Telepon */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-gray-700 ml-1">
                                 No. Telepon
                             </label>
-                            <div className="relative">
-                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+                            <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-golden-600 transition-colors pointer-events-none">
                                     <Phone className="w-5 h-5" />
                                 </div>
                                 <input
                                     type="tel"
                                     value={formData.phone}
                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    className="w-full pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
-                                    style={{ paddingLeft: '3.25rem' }}
+                                    className="block w-full pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-golden-500 focus:ring-4 focus:ring-golden-500/10 transition-all placeholder:text-gray-400 font-medium text-gray-900 shadow-sm"
+                                    style={{ paddingLeft: '60px' }}
                                     placeholder="Contoh: 081234567890"
                                 />
                             </div>
                         </div>
 
                         {/* Alamat */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-gray-700 ml-1">
                                 Alamat Lengkap
                             </label>
-                            <div className="relative">
-                                <div className="absolute left-5 top-4 text-gray-400">
+                            <div className="relative group">
+                                <div className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-golden-600 transition-colors pointer-events-none">
                                     <MapPin className="w-5 h-5" />
                                 </div>
                                 <textarea
                                     value={formData.address}
                                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                    className="w-full pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400 min-h-[100px]"
-                                    style={{ paddingLeft: '3.25rem' }}
+                                    className="block w-full pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-golden-500 focus:ring-4 focus:ring-golden-500/10 transition-all placeholder:text-gray-400 font-medium text-gray-900 shadow-sm min-h-[100px] resize-none"
+                                    style={{ paddingLeft: '60px' }}
                                     placeholder="Masukkan alamat lengkap"
                                 />
                             </div>
                         </div>
 
-                        {/* Email */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Email
-                            </label>
-                            <div className="relative">
-                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
-                                    <Mail className="w-5 h-5" />
-                                </div>
-                                <input
-                                    type="email"
-                                    value={user?.email || ''}
-                                    disabled
-                                    className="w-full pr-4 py-3.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed"
-                                    style={{ paddingLeft: '3.25rem' }}
-                                />
-                            </div>
-                            <div className="mt-2 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg w-fit">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 flex-shrink-0"></span>
-                                <span>Email tidak dapat diubah demi keamanan akun</span>
-                            </div>
-                        </div>
+
+
+
                     </div>
 
-                    <div className="pt-2">
+                    <div className="pt-8 pb-10 mb-8">
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-amber-600 to-amber-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-amber-600/20 hover:shadow-xl hover:shadow-amber-600/30 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full bg-gradient-to-r from-golden-600 to-golden-700 text-white py-3.5 rounded-xl font-semibold text-sm shadow-lg shadow-golden-600/25 hover:shadow-xl hover:shadow-golden-600/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                         >
                             {loading ? (
                                 <>

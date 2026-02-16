@@ -22,36 +22,47 @@ export function OrdersPage() {
     switch (status) {
       case 'pending':
         return {
-          text: 'Menunggu Konfirmasi',
-          color: 'text-yellow-600',
-          bg: 'bg-yellow-50',
+          text: 'Belum Dibayar',
+          color: 'text-zinc-500',
+          bg: 'bg-zinc-50',
           icon: Clock,
         };
-      case 'processing':
+      case 'paid':
         return {
-          text: 'Sedang Diproses',
-          color: 'text-blue-600',
-          bg: 'bg-blue-50',
+          text: 'Mencari Driver',
+          color: 'text-amber-800',
+          bg: 'bg-amber-50',
+          icon: Clock,
+        };
+      case 'pesanan_dibuat':
+      case 'driver_tiba_di_restoran':
+        return {
+          text: 'Driver di Lokasi',
+          color: 'text-emerald-800',
+          bg: 'bg-emerald-50',
           icon: Package,
         };
+      case 'pesanan_diambil_driver':
+      case 'otw_menuju_lokasi':
       case 'on-delivery':
         return {
-          text: 'Dalam Pengiriman',
-          color: 'text-orange-600',
-          bg: 'bg-orange-50',
+          text: 'Sedang Diantar',
+          color: 'text-blue-800',
+          bg: 'bg-blue-50',
           icon: Truck,
         };
+      case 'pesanan_selesai':
       case 'delivered':
         return {
           text: 'Selesai',
-          color: 'text-amber-600',
-          bg: 'bg-amber-50',
+          color: 'text-zinc-800',
+          bg: 'bg-zinc-100',
           icon: CheckCircle2,
         };
       default:
         return {
           text: 'Dibatalkan',
-          color: 'text-red-600',
+          color: 'text-red-800',
           bg: 'bg-red-50',
           icon: Clock,
         };
@@ -86,62 +97,67 @@ export function OrdersPage() {
           <div className="space-y-3">
             {orders.map((order) => {
               const statusInfo = getStatusInfo(order.status);
-              const StatusIcon = statusInfo.icon;
+              const dateObj = order.date ? new Date(order.date) : null;
+              const formattedDate = dateObj ? dateObj.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              }) : 'Baru saja';
 
               return (
                 <div
                   key={order.id}
                   onClick={() => navigate(`/order/${order.id}`)}
-                  className="bg-white rounded-xl p-4 shadow-sm cursor-pointer active:scale-98 transition-transform"
+                  className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all mb-3"
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm text-gray-600">
-                      {order.date} • #{order.id}
+                    <div className="text-sm text-gray-600 font-medium">
+                      {formattedDate} • #{order.id.slice(0, 8).toUpperCase()}
                     </div>
                     <div
-                      className={`flex items-center gap-1 px-2 py-1 rounded-full ${statusInfo.bg}`}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${statusInfo.bg}`}
                     >
-                      <StatusIcon className={`w-4 h-4 ${statusInfo.color}`} />
-                      <span className={`text-xs font-medium ${statusInfo.color}`}>
+                      <statusInfo.icon className={`w-3.5 h-3.5 ${statusInfo.color}`} />
+                      <span className={`text-xs font-semibold ${statusInfo.color}`}>
                         {statusInfo.text}
                       </span>
                     </div>
                   </div>
 
                   {/* Items */}
-                  <div className="space-y-2 mb-3">
+                  <div className="space-y-3 mb-3">
                     {order.items.slice(0, 2).map((item) => (
                       <div key={item.id} className="flex gap-3">
                         <ImageWithFallback
                           src={item.image}
                           alt={item.name}
-                          className="w-12 h-12 rounded-lg object-cover"
+                          className="w-12 h-12 rounded-lg object-cover bg-gray-50"
                         />
-                        <div className="flex-1">
-                          <div className="text-sm font-medium line-clamp-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-gray-900 line-clamp-1">
                             {item.name}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            x{item.quantity}
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {item.quantity} x {formatPrice(item.price)}
                           </div>
                         </div>
-                        <div className="text-sm font-semibold text-amber-600">
+                        <div className="text-sm font-bold text-gray-900">
                           {formatPrice(item.price * item.quantity)}
                         </div>
                       </div>
                     ))}
                     {order.items.length > 2 && (
-                      <div className="text-xs text-gray-500 pl-15">
+                      <div className="text-xs text-gray-500 pl-1">
                         +{order.items.length - 2} item lainnya
                       </div>
                     )}
                   </div>
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <div className="text-sm text-gray-600">Total Belanja</div>
-                    <div className="font-semibold">{formatPrice(order.total)}</div>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div className="text-sm font-medium text-gray-600">Total Belanja</div>
+                    <div className="text-sm font-bold text-gray-900">{formatPrice(order.total)}</div>
                   </div>
                 </div>
               );

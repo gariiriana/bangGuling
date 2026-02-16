@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, CheckCircle2, Package, Truck } from 'lucide-react';
-import { useOrder, updateOrderStatus } from '../hooks/useOrders';
+import { MapPin, Clock, CheckCircle2, Package, Truck } from 'lucide-react';
+import { useOrder } from '../hooks/useOrders';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { MapSearchModal } from '../components/MapSearchModal';
 
 export function OrderTrackingPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { order, loading, error } = useOrder(orderId);
+  const [isMapOpen, setIsMapOpen] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -20,28 +23,49 @@ export function OrderTrackingPage() {
     switch (status) {
       case 'pending':
         return {
-          text: 'Menunggu Konfirmasi',
+          text: 'Pesanan Belum Dibayar',
           color: 'text-yellow-600',
           bg: 'bg-yellow-50',
           icon: Clock,
         };
-      case 'processing':
+      case 'paid':
         return {
-          text: 'Sedang Diproses',
+          text: 'Mencari Driver Terdekat',
+          color: 'text-golden-600',
+          bg: 'bg-golden-50',
+          icon: Clock,
+        };
+      case 'pesanan_dibuat':
+        return {
+          text: 'Driver Sedang Menuju Restoran',
           color: 'text-blue-600',
           bg: 'bg-blue-50',
+          icon: MapPin,
+        };
+      case 'driver_tiba_di_restoran':
+        return {
+          text: 'Driver di Restoran',
+          color: 'text-blue-600',
+          bg: 'bg-blue-50',
+          icon: MapPin,
+        };
+      case 'pesanan_diambil_driver':
+        return {
+          text: 'Pesanan Diambil',
+          color: 'text-indigo-600',
+          bg: 'bg-indigo-50',
           icon: Package,
         };
-      case 'on-delivery':
+      case 'otw_menuju_lokasi':
         return {
-          text: 'Dalam Pengiriman',
+          text: 'Driver OTW ke Lokasimu',
           color: 'text-orange-600',
           bg: 'bg-orange-50',
           icon: Truck,
         };
-      case 'delivered':
+      case 'pesanan_selesai':
         return {
-          text: 'Selesai',
+          text: 'Pesanan Selesai',
           color: 'text-green-600',
           bg: 'bg-green-50',
           icon: CheckCircle2,
@@ -89,43 +113,44 @@ export function OrderTrackingPage() {
 
   const trackingSteps = [
     {
-      label: 'Pesanan Dibuat',
+      label: 'Pesanan Belum Dibayar',
       completed: true,
-      time: order.placedAt?.toDate().toLocaleString('id-ID')
+      time: order.placedAt?.toDate()?.toLocaleString('id-ID') || ''
     },
     {
-      label: 'Pesanan Dikonfirmasi',
-      completed: order.status !== 'pending',
-      time: order.confirmedAt?.toDate().toLocaleString('id-ID') || ''
+      label: 'Mencari Driver Terdekat',
+      completed: ['paid', 'confirmed', 'processing', 'pesanan_dibuat', 'driver_tiba_di_restoran', 'pesanan_diambil_driver', 'otw_menuju_lokasi', 'pesanan_selesai', 'delivered'].includes(order.status),
+      time: order.paidAt?.toDate()?.toLocaleString('id-ID') || ''
     },
     {
-      label: 'Sedang Diproses',
-      completed: ['processing', 'on-delivery', 'delivered'].includes(order.status),
-      time: order.confirmedAt?.toDate().toLocaleString('id-ID') || ''
+      label: 'Driver Menuju ke Restoran',
+      completed: ['pesanan_dibuat', 'driver_tiba_di_restoran', 'pesanan_diambil_driver', 'otw_menuju_lokasi', 'pesanan_selesai', 'delivered'].includes(order.status),
+      time: order.confirmedAt?.toDate()?.toLocaleString('id-ID') || ''
     },
     {
-      label: 'Dalam Pengiriman',
-      completed: ['on-delivery', 'delivered'].includes(order.status),
-      time: order.pickedUpAt?.toDate().toLocaleString('id-ID') || ''
+      label: 'Driver Sudah Sampai di Restoran',
+      completed: ['driver_tiba_di_restoran', 'pesanan_diambil_driver', 'otw_menuju_lokasi', 'pesanan_selesai', 'delivered'].includes(order.status),
+      time: order.arrivedAtRestoAt?.toDate()?.toLocaleString('id-ID') || ''
     },
     {
-      label: 'Pesanan Selesai',
-      completed: order.status === 'delivered',
-      time: order.deliveredAt?.toDate().toLocaleString('id-ID') || ''
+      label: 'Pesanan Diambil Driver',
+      completed: ['pesanan_diambil_driver', 'otw_menuju_lokasi', 'pesanan_selesai', 'delivered'].includes(order.status),
+      time: order.pickedUpAt?.toDate()?.toLocaleString('id-ID') || ''
+    },
+    {
+      label: 'Driver OTW Lokasi Anda',
+      completed: ['otw_menuju_lokasi', 'pesanan_selesai', 'delivered'].includes(order.status),
+      time: order.onTheWayAt?.toDate()?.toLocaleString('id-ID') || ''
+    },
+    {
+      label: 'Pesanan Sampai',
+      completed: ['pesanan_selesai', 'delivered'].includes(order.status),
+      time: order.completedAt?.toDate()?.toLocaleString('id-ID') || ''
     },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-screen-sm mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2">
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-semibold">Detail Pesanan</h1>
-        </div>
-      </div>
 
       <div className="max-w-screen-sm mx-auto">
         {/* Status Card */}
@@ -139,14 +164,14 @@ export function OrderTrackingPage() {
               <div className="text-sm text-gray-600">Order #{order.id.substring(0, 8)}...</div>
             </div>
           </div>
-          {order.status === 'pending' && (
-            <div className="text-sm text-gray-600 mt-2">
-              Pesanan Anda sedang menunggu konfirmasi dari penjual
+          {order.status === 'paid' && (
+            <div className="text-sm text-gray-600 mt-2 italic animate-pulse">
+              Mencari driver terdekat untuk kamu...
             </div>
           )}
-          {order.status === 'on-delivery' && (
+          {['pesanan_dibuat', 'driver_tiba_di_restoran', 'pesanan_diambil_driver', 'otw_menuju_lokasi'].includes(order.status) && (
             <div className="text-sm text-gray-600 mt-2">
-              Pesanan sedang dalam perjalanan ke alamat Anda
+              Driver sedang memproses pengiriman pesanan kamu
             </div>
           )}
         </div>
@@ -172,11 +197,21 @@ export function OrderTrackingPage() {
                   )}
                 </div>
                 <div className="flex-1 pb-4">
-                  <div
-                    className={`text-sm ${step.completed ? 'font-medium' : 'text-gray-500'
-                      }`}
-                  >
-                    {step.label}
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`text-sm ${step.completed ? 'font-medium' : 'text-gray-500'
+                        }`}
+                    >
+                      {step.label}
+                    </div>
+                    {index === 1 && ['paid', 'pesanan_dibuat', 'driver_tiba_di_restoran', 'pesanan_diambil_driver', 'otw_menuju_lokasi'].includes(order.status) && (
+                      <button
+                        onClick={() => setIsMapOpen(true)}
+                        className="text-xs font-semibold text-golden-600 bg-golden-50 px-3 py-1.5 rounded-xl active:scale-95 transition-all shadow-sm border border-golden-200"
+                      >
+                        Lihat Posisi Driver
+                      </button>
+                    )}
                   </div>
                   {step.time && (
                     <div className="text-xs text-gray-500 mt-1">{step.time}</div>
@@ -186,6 +221,13 @@ export function OrderTrackingPage() {
             ))}
           </div>
         </div>
+
+        <MapSearchModal
+          isOpen={isMapOpen}
+          onClose={() => setIsMapOpen(false)}
+          totalPrice={order.total}
+          orderId={order.id}
+        />
 
         {/* Delivery Info */}
         <div className="bg-white p-4 mb-2">
@@ -203,7 +245,6 @@ export function OrderTrackingPage() {
 
         {/* Order Items */}
         <div className="bg-white p-4 mb-2">
-          <h3 className="font-semibold mb-3">Detail Pesanan</h3>
           <div className="space-y-3">
             {order.items.map((item) => (
               <div key={item.id} className="flex gap-3">
@@ -250,35 +291,20 @@ export function OrderTrackingPage() {
         </div>
 
         {/* Actions */}
-        <div className="px-4 space-y-2">
-          {order.status === 'pending' && (
-            <button
-              onClick={async () => {
-                const confirm = window.confirm('Apakah Anda yakin ingin mengonfirmasi pembayaran ini?');
-                if (confirm) {
-                  await updateOrderStatus(order.id, 'processing');
-                  // We can also add a toast/notification here if needed, but the UI will update automatically
-                }
-              }}
-              className="w-full bg-gradient-to-r from-golden-600 to-golden-700 text-white py-3 rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
-            >
-              Konfirmasi Pembayaran & Proses Pesanan
-            </button>
-          )}
-
-          {order.status === 'delivered' && (
+        <div className="px-4 mt-6 space-y-3">
+          {order.status === 'pesanan_selesai' && (
             <button
               onClick={() => navigate('/')}
-              className="w-full bg-gradient-to-r from-golden-600 to-golden-700 text-white py-3 rounded-lg font-medium"
+              className="w-full bg-gradient-to-r from-golden-600 to-golden-700 text-white py-3.5 rounded-xl font-bold shadow-lg active:scale-95 transition-all"
             >
               Pesan Lagi
             </button>
           )}
           <button
-            onClick={() => navigate('/')}
-            className="w-full border border-golden-600 text-golden-600 py-3 rounded-lg font-medium"
+            onClick={() => navigate('/orders')}
+            className="w-full border-2 border-golden-600 text-golden-600 py-3 rounded-xl font-bold active:scale-95 transition-all"
           >
-            Kembali ke Beranda
+            Kembali ke Pesanan
           </button>
         </div>
       </div>

@@ -25,6 +25,7 @@ import { PartnershipApplyPage } from './pages/PartnershipApplyPage';
 import { PartnershipStatusPage } from './pages/PartnershipStatusPage';
 import { EditProfilePage } from './pages/EditProfilePage';
 import { FeatureComingSoonPage } from './pages/FeatureComingSoonPage';
+import { QRISPage } from './pages/QRISPage';
 
 export const router = createBrowserRouter([
   {
@@ -70,6 +71,10 @@ export const router = createBrowserRouter([
       {
         path: 'order/:orderId',
         Component: OrderTrackingPage,
+      },
+      {
+        path: 'qris/:orderId',
+        Component: QRISPage,
       },
       {
         path: 'orders',

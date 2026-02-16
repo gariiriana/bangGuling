@@ -23,17 +23,22 @@ export interface Order {
   id: string;
   customerId: string;
   driverId?: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'on-delivery' | 'delivered' | 'cancelled';
+  status: 'pending' | 'paid' | 'confirmed' | 'processing' | 'pesanan_dibuat' | 'driver_tiba_di_restoran' | 'pesanan_diambil_driver' | 'otw_menuju_lokasi' | 'on-delivery' | 'delivered' | 'pesanan_selesai' | 'cancelled';
   items: CartItem[];
   total: number;
   deliveryAddress: string;
   paymentMethod: string;
   estimatedTime?: string;
+  completionPhoto?: string; // B64 encoded proof
   // Firebase Timestamps
   placedAt?: Timestamp;
+  paidAt?: Timestamp;
   confirmedAt?: Timestamp;
+  arrivedAtRestoAt?: Timestamp;
   pickedUpAt?: Timestamp;
+  onTheWayAt?: Timestamp;
   deliveredAt?: Timestamp;
+  completedAt?: Timestamp;
   cancelledAt?: Timestamp;
   // Legacy field for backward compatibility
   date?: string;

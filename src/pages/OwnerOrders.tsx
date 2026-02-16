@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useOwnerOrders, updateOrderStatus as updateOrderInDb } from '../hooks/useOrders';
-import { Package, Search, CheckCircle2, Clock, Truck, XCircle, Eye, MapPin, Loader2 } from 'lucide-react';
+import { Package, Search, CheckCircle2, Clock, Truck, XCircle, Eye, MapPin, Loader2, Camera } from 'lucide-react';
 import { OwnerSidebar } from '../components/OwnerSidebar';
 import { OwnerHeader } from '../components/OwnerHeader';
 
@@ -9,7 +9,6 @@ export function OwnerOrders() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -21,14 +20,21 @@ export function OwnerOrders() {
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'pending':
-        return { label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800', icon: Clock };
+      case 'paid':
+        return { label: 'Dibayar', color: 'bg-green-100 text-green-800', icon: CheckCircle2 };
       case 'confirmed':
         return { label: 'Dikonfirmasi', color: 'bg-blue-100 text-blue-800', icon: CheckCircle2 };
       case 'processing':
         return { label: 'Diproses', color: 'bg-purple-100 text-purple-800', icon: Package };
-      case 'on-delivery':
-        return { label: 'Diantar', color: 'bg-golden-100 text-golden-800', icon: Truck };
+      case 'pesanan_dibuat':
+        return { label: 'Mencari Driver', color: 'bg-amber-100 text-amber-800', icon: Clock };
+      case 'driver_tiba_di_restoran':
+        return { label: 'Driver di Resto', color: 'bg-blue-100 text-blue-800', icon: MapPin };
+      case 'pesanan_diambil_driver':
+        return { label: 'Pesanan Diambil', color: 'bg-indigo-100 text-indigo-800', icon: Package };
+      case 'otw_menuju_lokasi':
+        return { label: 'Driver OTW', color: 'bg-orange-100 text-orange-800', icon: Truck };
+      case 'pesanan_selesai':
       case 'delivered':
         return { label: 'Selesai', color: 'bg-green-100 text-green-800', icon: CheckCircle2 };
       case 'cancelled':
@@ -46,18 +52,14 @@ export function OwnerOrders() {
   });
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    setIsUpdating(orderId);
     await updateOrderInDb(orderId, newStatus as any);
-    setIsUpdating(null);
   };
 
   const statusCounts = {
     all: orders.length,
-    pending: orders.filter((o) => o.status === 'pending').length,
-    confirmed: orders.filter((o) => o.status === 'confirmed').length,
-    processing: orders.filter((o) => o.status === 'processing').length,
-    'on-delivery': orders.filter((o) => o.status === 'on-delivery').length,
-    delivered: orders.filter((o) => o.status === 'delivered').length,
+    pending: orders.filter((o) => o.status === 'pending' || o.status === 'paid').length,
+    active: orders.filter((o) => !['delivered', 'pesanan_selesai', 'cancelled'].includes(o.status)).length,
+    delivered: orders.filter((o) => o.status === 'delivered' || o.status === 'pesanan_selesai').length,
     cancelled: orders.filter((o) => o.status === 'cancelled').length,
   };
 
@@ -92,11 +94,10 @@ export function OwnerOrders() {
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {[
                   { key: 'all', label: 'Semua', count: statusCounts.all },
-                  { key: 'pending', label: 'Menunggu', count: statusCounts.pending },
-                  { key: 'confirmed', label: 'Dikonfirmasi', count: statusCounts.confirmed },
-                  { key: 'processing', label: 'Diproses', count: statusCounts.processing },
-                  { key: 'on-delivery', label: 'Diantar', count: statusCounts['on-delivery'] },
+                  { key: 'pending', label: 'Menunggu/Dibayar', count: statusCounts.pending },
+                  { key: 'active', label: 'Aktif/Proses', count: statusCounts.active },
                   { key: 'delivered', label: 'Selesai', count: statusCounts.delivered },
+                  { key: 'cancelled', label: 'Dibatalkan', count: statusCounts.cancelled },
                 ].map((filter) => (
                   <button
                     key={filter.key}
@@ -127,7 +128,7 @@ export function OwnerOrders() {
               <div className="bg-white rounded-2xl shadow-sm p-6">
                 <div className="text-sm text-gray-600 mb-2">Dalam Pengiriman</div>
                 <div className="text-3xl font-bold text-blue-600">
-                  {statusCounts['on-delivery']}
+                  {statusCounts.active}
                 </div>
               </div>
               <div className="bg-white rounded-2xl shadow-sm p-6">
@@ -220,6 +221,24 @@ export function OwnerOrders() {
                               ))}
                             </div>
                           </div>
+
+                          {/* Delivery Photo (Proof) */}
+                          {order.completionPhoto && (
+                            <div className="mb-4">
+                              <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                                <Camera className="w-4 h-4 text-golden-600" />
+                                Bukti Foto Delivery:
+                              </h4>
+                              <div className="bg-white p-2 rounded-xl border border-gray-200">
+                                <img
+                                  src={order.completionPhoto}
+                                  alt="Bukti Foto"
+                                  className="w-full h-auto rounded-lg shadow-sm"
+                                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                                />
+                              </div>
+                            </div>
+                          )}
 
                           {/* Payment Method */}
                           <div className="mb-4">

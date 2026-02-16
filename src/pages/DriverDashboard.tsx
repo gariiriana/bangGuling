@@ -1,19 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useDriverOrders, updateOrderStatus } from '../hooks/useOrders';
 import { useLocationTracker } from '../hooks/useLocationTracker';
 import { Package, MapPin, CheckCircle2, Navigation, DollarSign, Activity, Power } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+
+// Component to display real-time customer info
+function CustomerInfo({ customerId }: { customerId: string }) {
+  const [customer, setCustomer] = useState<any>(null);
+
+  useEffect(() => {
+    if (!customerId) return;
+
+    const unsub = onSnapshot(doc(db, 'users', customerId), (doc) => {
+      if (doc.exists()) {
+        setCustomer(doc.data());
+      }
+    });
+
+    return () => unsub();
+  }, [customerId]);
+
+  if (!customer) return <span className="text-xs text-gray-500">Loading customer...</span>;
+
+  return (
+    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-dashed border-golden-200">
+      <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+        {customer.photoURL ? (
+          <img src={customer.photoURL} alt={customer.displayName} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+            </svg>
+          </div>
+        )}
+      </div>
+      <div>
+        <div className="text-xs font-bold text-gray-800">{customer.displayName || 'Pelanggan'}</div>
+        <div className="text-[10px] text-gray-500">{customer.phone || '-'}</div>
+      </div>
+    </div>
+  );
+}
 
 export function DriverDashboard() {
   const { user } = useAuth();
-  const { orders, loading } = useDriverOrders(user?.uid);
-  console.log('DEBUG: Driver Orders:', orders);
-  console.log('DEBUG: User UID:', user?.uid);
+  const [isOnline, setIsOnline] = useState(user?.isActive || false);
+  const { orders, loading } = useDriverOrders(user?.uid, isOnline);
   const [selectedTab, setSelectedTab] = useState<'available' | 'ongoing' | 'completed'>('available');
   const [processing, setProcessing] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState(user?.isActive || false);
 
   // Initialize location tracking
   const { error: locationError } = useLocationTracker(user?.uid, isOnline);
@@ -33,9 +70,12 @@ export function DriverDashboard() {
   };
 
   // Filter orders for driver
-  const availableOrders = orders.filter((o) => o.status === 'processing');
-  const ongoingOrders = orders.filter((o) => o.status === 'on-delivery' && o.driverId === user?.uid);
-  const completedOrders = orders.filter((o) => o.status === 'delivered' && o.driverId === user?.uid);
+  const availableOrders = orders.filter((o) => o.status === 'paid' || o.status === 'processing');
+  const ongoingOrders = orders.filter((o) =>
+    ['pesanan_dibuat', 'driver_tiba_di_restoran', 'pesanan_diambil_driver', 'otw_menuju_lokasi', 'on-delivery'].includes(o.status)
+    && o.driverId === user?.uid
+  );
+  const completedOrders = orders.filter((o) => (o.status === 'delivered' || o.status === 'pesanan_selesai') && o.driverId === user?.uid);
 
   // Calculate today's earnings
   const todayEarnings = completedOrders.reduce((sum, order) => sum + (order.total * 0.1), 0); // 10% commission
@@ -48,19 +88,18 @@ export function DriverDashboard() {
     }).format(price);
   };
 
-  const handleAcceptOrder = async (orderId: string) => {
+  const handleUpdateStatus = async (orderId: string, status: any, photo?: string) => {
     if (!user) return;
     setProcessing(orderId);
-    await updateOrderStatus(orderId, 'on-delivery', user.uid);
+    await updateOrderStatus(orderId, status, user.uid, photo);
     setProcessing(null);
-    setSelectedTab('ongoing');
+    if (status === 'pesanan_dibuat') setSelectedTab('ongoing');
+    if (status === 'pesanan_selesai') setSelectedTab('completed');
   };
 
-  const handleCompleteOrder = async (orderId: string) => {
-    setProcessing(orderId);
-    await updateOrderStatus(orderId, 'delivered');
-    setProcessing(null);
-    setSelectedTab('completed');
+  const capturePhotoMock = () => {
+    // Return a dummy base64 string to simulate photo capture
+    return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
   };
 
   const getOrdersByTab = () => {
@@ -177,9 +216,9 @@ export function DriverDashboard() {
       </div>
 
       {/* Orders List */}
-      <div className="max-w-screen-sm mx-auto px-4 space-y-3">
+      <div className="max-w-screen-sm mx-auto px-4 pb-4">
         {displayOrders.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center">
+          <div className="bg-white rounded-xl p-8 text-center shadow-sm border border-gray-100">
             <Package className="w-16 h-16 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 text-sm">
               {selectedTab === 'available' && 'Tidak ada pesanan tersedia'}
@@ -188,96 +227,120 @@ export function DriverDashboard() {
             </p>
           </div>
         ) : (
-          displayOrders.map((order) => (
-            <div key={order.id} className="bg-white rounded-xl shadow-md overflow-hidden">
-              {/* Order Header */}
-              <div className="bg-gradient-to-r from-golden-50 to-golden-100 p-3 border-b border-golden-200">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-golden-600" />
-                    <span className="font-semibold text-sm text-gray-900">{order.id.substring(0, 12)}...</span>
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {order.placedAt?.toDate().toLocaleDateString('id-ID')}
-                  </div>
-                </div>
-                <div className="text-lg font-bold text-golden-600">
-                  {formatPrice(order.total)}
-                </div>
-                <div className="text-xs text-green-600 font-medium mt-1">
-                  Komisi: {formatPrice(order.total * 0.1)}
-                </div>
-              </div>
-
-              {/* Order Details */}
-              <div className="p-3 space-y-2">
-                {/* Items */}
-                <div>
-                  <div className="text-xs font-semibold text-gray-700 mb-1">Pesanan:</div>
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="text-xs text-gray-600 flex justify-between">
-                      <span>{item.name} x{item.quantity}</span>
-                      <span>{formatPrice(item.price * item.quantity)}</span>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+            {displayOrders.map((order) => (
+              <div key={order.id} className="p-4 hover:bg-gray-50 transition-colors">
+                {/* Header: ID, Status, Price */}
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-900 text-sm">#{order.id.substring(0, 8)}</span>
                     </div>
-                  ))}
-                </div>
-
-                {/* Delivery Address */}
-                <div className="flex items-start gap-2 bg-gray-50 p-2 rounded-lg">
-                  <MapPin className="w-4 h-4 text-golden-600 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="text-[10px] text-gray-500 mb-0.5">Alamat Pengiriman:</div>
-                    <div className="text-xs text-gray-900">{order.deliveryAddress}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {new Date(order.date || new Date().toISOString()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • {order.items.length} Barang
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-golden-600 text-sm">{formatPrice(order.total)}</div>
+                    <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize mt-1 ${order.status === 'paid' ? 'bg-green-100 text-green-700' :
+                        order.status === 'pesanan_dibuat' ? 'bg-blue-100 text-blue-700' :
+                          (order.status === 'delivered' || order.status === 'pesanan_selesai') ? 'bg-gray-100 text-gray-600' :
+                            'bg-golden-50 text-golden-700'
+                      }`}>
+                      {order.status.replace(/_/g, ' ')}
+                    </span>
                   </div>
                 </div>
 
-                {/* Payment Method */}
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <span className="font-medium">Pembayaran:</span>
-                  <span>{order.paymentMethod}</span>
+                {/* Location (Compact) */}
+                <div className="flex items-start gap-2 mb-3">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-gray-600 line-clamp-1">{order.deliveryAddress}</p>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="p-3 bg-gray-50 border-t">
-                {selectedTab === 'available' && (
-                  <button
-                    onClick={() => handleAcceptOrder(order.id)}
-                    disabled={processing === order.id}
-                    className="w-full bg-gradient-to-r from-golden-600 to-golden-700 text-white py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    {processing === order.id ? 'Memproses...' : 'Terima Pesanan'}
-                  </button>
+                {/* Customer Info (Compact) */}
+                {order.customerId && (
+                  <div className="mb-3 pl-5 border-l-2 border-golden-100">
+                    <CustomerInfo customerId={order.customerId} />
+                  </div>
                 )}
-                {selectedTab === 'ongoing' && (
-                  <div className="space-y-2">
+
+                {/* Action Buttons */}
+                <div className="mt-3">
+                  {selectedTab === 'available' && (
                     <button
-                      onClick={() => window.open(`https://maps.google.com/?q=${encodeURIComponent(order.deliveryAddress)}`, '_blank')}
-                      className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-                    >
-                      <Navigation className="w-4 h-4" />
-                      Buka Navigasi GPS
-                    </button>
-                    <button
-                      onClick={() => handleCompleteOrder(order.id)}
+                      onClick={() => handleUpdateStatus(order.id, 'pesanan_dibuat')}
                       disabled={processing === order.id}
-                      className="w-full bg-green-600 text-white py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full bg-golden-600 hover:bg-golden-700 text-white py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all disabled:opacity-50"
                     >
-                      <CheckCircle2 className="w-4 h-4" />
-                      {processing === order.id ? 'Memproses...' : 'Selesaikan Pengiriman'}
+                      {processing === order.id ? <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> : <CheckCircle2 className="w-4 h-4" />}
+                      AMBIL PESANAN
                     </button>
-                  </div>
-                )}
-                {selectedTab === 'completed' && (
-                  <div className="flex items-center justify-center gap-2 text-green-600 py-2">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span className="font-medium text-sm">Pengiriman Selesai</span>
-                  </div>
-                )}
+                  )}
+
+                  {selectedTab === 'ongoing' && (
+                    <div className="grid grid-cols-1 gap-2">
+                      {/* Contextual Action Button based on Status */}
+                      {order.status === 'pesanan_dibuat' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'driver_tiba_di_restoran')}
+                          disabled={processing === order.id}
+                          className="w-full bg-golden-600 text-white py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+                        >
+                          TIBA DI RESTORAN
+                        </button>
+                      )}
+                      {order.status === 'driver_tiba_di_restoran' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'pesanan_diambil_driver')}
+                          disabled={processing === order.id}
+                          className="w-full bg-golden-600 text-white py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+                        >
+                          PESANAN DIAMBIL
+                        </button>
+                      )}
+                      {order.status === 'pesanan_diambil_driver' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'otw_menuju_lokasi')}
+                          disabled={processing === order.id}
+                          className="w-full bg-golden-600 text-white py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+                        >
+                          OTW KE LOKASI
+                        </button>
+                      )}
+                      {order.status === 'otw_menuju_lokasi' && (
+                        <button
+                          onClick={() => {
+                            const photo = capturePhotoMock();
+                            handleUpdateStatus(order.id, 'pesanan_selesai', photo);
+                          }}
+                          disabled={processing === order.id}
+                          className="w-full bg-golden-600 text-white py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+                        >
+                          SELESAIKAN PESANAN
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.deliveryAddress)}`, '_blank')}
+                        className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-golden-700 bg-golden-50 py-2 rounded-lg border border-golden-100"
+                      >
+                        <Navigation className="w-3 h-3" />
+                        Arahkan GPS
+                      </button>
+                    </div>
+                  )}
+
+                  {selectedTab === 'completed' && (
+                    <div className="flex items-center gap-2 text-green-600 text-xs font-medium bg-green-50 p-2 rounded-lg border border-green-100">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Selesai pada {order.completedAt ? new Date(order.completedAt.toDate()).toLocaleTimeString('id-ID') : '-'}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>
