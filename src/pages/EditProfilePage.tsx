@@ -164,19 +164,18 @@ export function EditProfilePage() {
                     <div className="space-y-5">
                         {/* Nama Lengkap */}
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-gray-700 ml-1">
+                            <label className="block text-sm font-medium text-gray-700">
                                 Nama Lengkap
                             </label>
                             <div className="relative group">
-                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-golden-600 transition-colors pointer-events-none">
-                                    <User className="w-5 h-5" />
+                                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-golden-600 transition-colors pointer-events-none">
+                                    <User className="w-4 h-4" />
                                 </div>
                                 <input
                                     type="text"
                                     value={formData.displayName}
                                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                                    className="block w-full pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-golden-500 focus:ring-4 focus:ring-golden-500/10 transition-all placeholder:text-gray-400 font-medium text-gray-900 shadow-sm"
-                                    style={{ paddingLeft: '60px' }}
+                                    className="block w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-golden-500 focus:ring-2 focus:ring-golden-500/20 transition-all placeholder:text-gray-400 text-gray-900"
                                     placeholder="Masukkan nama lengkap"
                                     required
                                 />
@@ -185,19 +184,18 @@ export function EditProfilePage() {
 
                         {/* No. Telepon */}
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-gray-700 ml-1">
+                            <label className="block text-sm font-medium text-gray-700">
                                 No. Telepon
                             </label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-golden-600 transition-colors pointer-events-none">
-                                    <Phone className="w-5 h-5" />
+                                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-golden-600 transition-colors pointer-events-none">
+                                    <Phone className="w-4 h-4" />
                                 </div>
                                 <input
                                     type="tel"
                                     value={formData.phone}
                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    className="block w-full pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-golden-500 focus:ring-4 focus:ring-golden-500/10 transition-all placeholder:text-gray-400 font-medium text-gray-900 shadow-sm"
-                                    style={{ paddingLeft: '60px' }}
+                                    className="block w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-golden-500 focus:ring-2 focus:ring-golden-500/20 transition-all placeholder:text-gray-400 text-gray-900"
                                     placeholder="Contoh: 081234567890"
                                 />
                             </div>
@@ -205,25 +203,21 @@ export function EditProfilePage() {
 
                         {/* Alamat */}
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-gray-700 ml-1">
+                            <label className="block text-sm font-medium text-gray-700">
                                 Alamat Lengkap
                             </label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-golden-600 transition-colors pointer-events-none">
-                                    <MapPin className="w-5 h-5" />
+                                <div className="absolute left-3.5 top-[14px] text-gray-400 group-focus-within:text-golden-600 transition-colors pointer-events-none">
+                                    <MapPin className="w-4 h-4" />
                                 </div>
                                 <textarea
                                     value={formData.address}
                                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                    className="block w-full pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-golden-500 focus:ring-4 focus:ring-golden-500/10 transition-all placeholder:text-gray-400 font-medium text-gray-900 shadow-sm min-h-[100px] resize-none"
-                                    style={{ paddingLeft: '60px' }}
+                                    className="block w-full pl-10 pr-4 pt-3 pb-3 bg-gray-50 border border-gray-200 rounded-xl text-sm leading-5 focus:outline-none focus:bg-white focus:border-golden-500 focus:ring-2 focus:ring-golden-500/20 transition-all placeholder:text-gray-400 text-gray-900 min-h-[100px] resize-none"
                                     placeholder="Masukkan alamat lengkap"
                                 />
                             </div>
                         </div>
-
-
-
 
                     </div>
 
