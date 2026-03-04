@@ -139,143 +139,167 @@ export function OwnerOrders() {
               </div>
             </div>
 
-            {/* Orders List */}
-            <div className="space-y-4">
-              {loading ? (
-                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-                  <Loader2 className="w-16 h-16 text-golden-600 animate-spin mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">Memuat pesanan...</p>
-                </div>
-              ) : filteredOrders.length === 0 ? (
-                <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-                  <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-600 mb-2">
-                    Tidak ada pesanan
-                  </h3>
-                  <p className="text-gray-500">
-                    Belum ada pesanan yang sesuai dengan filter Anda
-                  </p>
-                </div>
-              ) : (
-                filteredOrders.map((order) => {
-                  const statusConfig = getStatusConfig(order.status);
-                  const StatusIcon = statusConfig.icon;
-                  const isExpanded = selectedOrder === order.id;
+            {/* Orders List Redesign */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">ID Pesanan</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal & Waktu</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Driver</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Total</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                          <Loader2 className="w-8 h-8 text-golden-600 animate-spin mx-auto mb-2" />
+                          Memuat data...
+                        </td>
+                      </tr>
+                    ) : filteredOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                          <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                          Tidak ada pesanan ditemukan
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredOrders.map((order) => {
+                        const statusConfig = getStatusConfig(order.status);
+                        const isExpanded = selectedOrder === order.id;
 
-                  return (
-                    <div
-                      key={order.id}
-                      className="bg-white rounded-2xl shadow-sm overflow-hidden"
-                    >
-                      {/* Order Header */}
-                      <div className="p-4 border-b border-gray-100">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <div className="font-bold text-gray-900 text-lg mb-1">
-                              {order.id}
-                            </div>
-                            <div className="text-sm text-gray-500">{order.date}</div>
-                          </div>
-                          <div className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${statusConfig.color}`}>
-                            <StatusIcon className="w-4 h-4" />
-                            {statusConfig.label}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-gray-600 mb-2">
-                          <MapPin className="w-4 h-4" />
-                          <span className="text-sm">{order.deliveryAddress}</span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="text-xl font-bold text-gray-900">
-                            {formatPrice(order.total)}
-                          </div>
-                          <button
-                            onClick={() => setSelectedOrder(isExpanded ? null : order.id)}
-                            className="px-4 py-2 bg-amber-50 text-amber-600 rounded-lg font-medium hover:bg-amber-100 transition-all flex items-center gap-2"
-                          >
-                            <Eye className="w-4 h-4" />
-                            {isExpanded ? 'Tutup' : 'Detail'}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Order Details (Expanded) */}
-                      {isExpanded && (
-                        <div className="p-4 bg-gray-50">
-                          {/* Items */}
-                          <div className="mb-4">
-                            <h4 className="font-medium text-gray-900 mb-2">Item Pesanan:</h4>
-                            <div className="space-y-2">
-                              {order.items.map((item) => (
-                                <div key={item.id} className="flex justify-between bg-white p-3 rounded-lg">
-                                  <div>
-                                    <div className="font-medium text-gray-900">{item.name}</div>
-                                    <div className="text-sm text-gray-500">Jumlah: {item.quantity}</div>
-                                  </div>
-                                  <div className="font-medium text-gray-900">
-                                    {formatPrice(item.price * item.quantity)}
-                                  </div>
+                        return (
+                          <React.Fragment key={order.id}>
+                            <tr className={`hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-amber-50/30' : ''}`}>
+                              <td className="px-6 py-4">
+                                <div className="font-bold text-gray-900">#{order.id.substring(0, 8)}</div>
+                                <div className="text-[10px] text-gray-400 font-mono">{order.id}</div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="text-sm text-gray-900">
+                                  {new Date(order.date || Date.now()).toLocaleDateString('id-ID')}
                                 </div>
-                              ))}
-                            </div>
-                          </div>
+                                <div className="text-xs text-gray-500">
+                                  {new Date(order.date || Date.now()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                                  {statusConfig.label}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                {order.driverId ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-golden-100 flex items-center justify-center text-golden-700">
+                                      <Truck className="w-4 h-4" />
+                                    </div>
+                                    <div className="text-xs">
+                                      <div className="font-semibold text-gray-900">Driver Aktif</div>
+                                      <div className="text-gray-500">#{order.driverId.substring(0, 6)}</div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-gray-400 italic">Belum ada driver</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 font-bold text-gray-900">
+                                {formatPrice(order.total)}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <button
+                                  onClick={() => setSelectedOrder(isExpanded ? null : order.id)}
+                                  className="p-2 hover:bg-gray-200 rounded-lg transition-all text-gray-600"
+                                  title="Lihat Detail"
+                                >
+                                  <Eye className={`w-5 h-5 ${isExpanded ? 'text-golden-600' : ''}`} />
+                                </button>
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr className="bg-gray-50/50">
+                                <td colSpan={6} className="px-6 py-6 border-b border-gray-100">
+                                  <div className="grid grid-cols-3 gap-8">
+                                    {/* Items & Payment */}
+                                    <div className="col-span-2 space-y-6">
+                                      <div>
+                                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Item Pesanan</h4>
+                                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                                          {order.items.map((item, idx) => (
+                                            <div key={idx} className="flex justify-between p-3 border-b border-gray-50 last:border-0">
+                                              <div>
+                                                <div className="font-medium text-gray-900">{item.name}</div>
+                                                <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
+                                              </div>
+                                              <div className="font-bold text-gray-900">{formatPrice(item.price * item.quantity)}</div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
 
-                          {/* Delivery Photo (Proof) */}
-                          {order.completionPhoto && (
-                            <div className="mb-4">
-                              <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                                <Camera className="w-4 h-4 text-golden-600" />
-                                Bukti Foto Delivery:
-                              </h4>
-                              <div className="bg-white p-2 rounded-xl border border-gray-200">
-                                <img
-                                  src={order.completionPhoto}
-                                  alt="Bukti Foto"
-                                  className="w-full h-auto rounded-lg shadow-sm"
-                                  onError={(e) => (e.currentTarget.style.display = 'none')}
-                                />
-                              </div>
-                            </div>
-                          )}
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                          <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Metode Bayar</h4>
+                                          <div className="text-sm font-bold text-gray-800">{order.paymentMethod}</div>
+                                        </div>
+                                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                          <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Alamat Kirim</h4>
+                                          <div className="text-xs font-medium text-gray-800 line-clamp-2">{order.deliveryAddress}</div>
+                                        </div>
+                                      </div>
+                                    </div>
 
-                          {/* Payment Method */}
-                          <div className="mb-4">
-                            <h4 className="font-medium text-gray-900 mb-2">Metode Pembayaran:</h4>
-                            <div className="bg-white p-3 rounded-lg">
-                              <span className="text-gray-700">{order.paymentMethod}</span>
-                            </div>
-                          </div>
+                                    {/* Photo & Actions */}
+                                    <div className="space-y-6">
+                                      {order.completionPhoto ? (
+                                        <div>
+                                          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Bukti Pengiriman</h4>
+                                          <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-white shadow-md ring-1 ring-gray-100">
+                                            <img src={order.completionPhoto} className="w-full h-full object-cover" alt="Proof" />
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="aspect-video bg-gray-100 rounded-xl flex flex-col items-center justify-center border border-dashed border-gray-300">
+                                          <Camera className="w-8 h-8 text-gray-300 mb-2" />
+                                          <span className="text-[10px] text-gray-400">Belum ada foto bukti</span>
+                                        </div>
+                                      )}
 
-                          {/* Change Status */}
-                          <div>
-                            <h4 className="font-medium text-gray-900 mb-2">Ubah Status:</h4>
-                            <div className="grid grid-cols-2 gap-2">
-                              {['confirmed', 'processing', 'on-delivery', 'delivered'].map((status) => {
-                                const config = getStatusConfig(status);
-                                return (
-                                  <button
-                                    key={status}
-                                    onClick={() => handleStatusChange(order.id, status)}
-                                    disabled={order.status === status}
-                                    className={`px-4 py-2 rounded-lg font-medium transition-all ${order.status === status
-                                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                      : 'bg-amber-600 text-white hover:bg-amber-700'
-                                      }`}
-                                  >
-                                    {config.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
+                                      <div>
+                                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Update Progress</h4>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          {['confirmed', 'processing', 'on-delivery', 'delivered'].map((status) => (
+                                            <button
+                                              key={status}
+                                              onClick={() => handleStatusChange(order.id, status)}
+                                              disabled={order.status === status}
+                                              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${order.status === status
+                                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                  : 'bg-golden-600 text-white hover:bg-golden-700 shadow-sm shadow-golden-200'
+                                                }`}
+                                            >
+                                              {getStatusConfig(status).label.toUpperCase()}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

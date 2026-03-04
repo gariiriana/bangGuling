@@ -112,23 +112,20 @@ export function HomePage() {
       <Header showSearch showLocation onSearch={setSearchQuery} />
 
 
-      {/* Categories - Elegant Centered Pills */}
-      <div className="max-w-screen-sm mx-auto px-4 py-4">
-        <div className="flex justify-center flex-wrap gap-3">
+      {/* Categories - Scrollable Pills */}
+      <div className="py-3">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 max-w-screen-sm mx-auto">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full border transition-all duration-300 shadow-sm active:scale-95 ${selectedCategory === cat.id
-                ? 'bg-golden-600 border-golden-600 text-white shadow-golden-600/25 ring-2 ring-golden-100 ring-offset-1'
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border transition-all duration-200 shadow-sm active:scale-95 whitespace-nowrap flex-shrink-0 ${selectedCategory === cat.id
+                ? 'bg-golden-600 border-golden-600 text-white shadow-golden-600/25'
                 : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
                 }`}
             >
-              <span className={`text-base leading-none ${selectedCategory === cat.id ? 'opacity-100' : 'opacity-80'}`}>
-                {cat.icon}
-              </span>
-              <span className={`text-xs font-semibold tracking-wide ${selectedCategory === cat.id ? 'text-white' : 'text-gray-700'
-                }`}>
+              <span className="text-sm leading-none">{cat.icon}</span>
+              <span className={`text-xs font-semibold ${selectedCategory === cat.id ? 'text-white' : 'text-gray-700'}`}>
                 {cat.name}
               </span>
             </button>
